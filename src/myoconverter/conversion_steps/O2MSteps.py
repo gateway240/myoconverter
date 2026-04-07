@@ -14,13 +14,21 @@ class O2MSteps:
     Class to coordinate all conversion steps
     """
 
-    def __init__(self, osim_model_file, geom_folder, mjc_target_folder,
-                 convert_steps=[1, 2, 3], muscle_list=None,
-                 osim_data_overwrite=False, convert=False,
-                 validation=False, generate_pdf=False, speedy=False,
-                 add_ground_geom=False,
-                 treat_as_normal_path_point=False):
-
+    def __init__(
+        self,
+        osim_model_file,
+        geom_folder,
+        mjc_target_folder,
+        convert_steps=[1, 2, 3],
+        muscle_list=None,
+        osim_data_overwrite=False,
+        convert=False,
+        validation=False,
+        generate_pdf=False,
+        speedy=False,
+        add_ground_geom=False,
+        treat_as_normal_path_point=False,
+    ):
         """
         Parameters:
         osim_model_file: string
@@ -54,21 +62,21 @@ class O2MSteps:
             If True, perform validation (generate plots) for the selected steps.
 
         generate_pdf: boolean
-            If True, generate the pdf report for the converted model 
+            If True, generate the pdf report for the converted model
             This generation only reads the generated comparison plots from the validation steps.
             Therefore, suggest to run after all the validation steps were preformed.
 
         speedy: boolean
-            If True, the optimization process will select a low number of instances, 
+            If True, the optimization process will select a low number of instances,
             checking nodes, as well iterations to speed up the process. This may result less
             optimal results, however for complex models, this is suggested. Then regular optimization
-            process (slower) can be done on selected muscles, if detected issues. 
+            process (slower) can be done on selected muscles, if detected issues.
 
         add_ground_geom: boolean
             If True, add ground to the converted model.
 
         treat_as_normal_path_point: boolean
-            If True, treat all moving and conditional points as normal fix points.        
+            If True, treat all moving and conditional points as normal fix points.
 
         """
 
@@ -107,21 +115,24 @@ class O2MSteps:
         # create the mjc_target_folder
         pathlib.Path(self.mjc_target_folder).mkdir(exist_ok=True, parents=True)
 
-	    ##############################################################################
-	    # STEP 1: GEOMETRY CONVERTING
-	    # convert the geomerties
+        ##############################################################################
+        # STEP 1: GEOMETRY CONVERTING
+        # convert the geomerties
 
-	    # check if the first step is required
+        # check if the first step is required
         if 1 in self.convert_steps:
-
-	        # create the first step folder if not exist
+            # create the first step folder if not exist
             path_step1 = self.mjc_target_folder + "/Step1_xmlConvert"
             pathlib.Path(path_step1).mkdir(exist_ok=True, parents=True)
 
-    	    # load the first step converting class
-            Step1 = BasicModelConvert(self.osim_model_file, self.geom_folder, path_step1,
-                                      add_ground_geom=self.add_ground_geom,
-                                      treat_as_normal_path_point=self.treat_as_normal_path_point)
+            # load the first step converting class
+            Step1 = BasicModelConvert(
+                self.osim_model_file,
+                self.geom_folder,
+                path_step1,
+                add_ground_geom=self.add_ground_geom,
+                treat_as_normal_path_point=self.treat_as_normal_path_point,
+            )
 
             if self.convert:  # General model conversion, generate xxxx_cvt1.xml model
                 logger.info("Started step 1 conversion - cvt1.")
@@ -136,9 +147,9 @@ class O2MSteps:
                 if self.convert:
                     Step1.vlt1_forwardKinematicsValidation(speedy=self.speedy)
                 else:
-                    mjcModel_Cvt1_path = self.mjc_target_folder + "/" +\
-                            os.path.split(self.osim_model_file)[1][:-5] +\
-                            "_cvt1.xml"
+                    mjcModel_Cvt1_path = (
+                        self.mjc_target_folder + "/" + os.path.split(self.osim_model_file)[1][:-5] + "_cvt1.xml"
+                    )
 
                     Step1.vlt1_forwardKinematicsValidation(mjc_model_path=mjcModel_Cvt1_path, speedy=self.speedy)
 
@@ -150,21 +161,21 @@ class O2MSteps:
         else:
             logger.info("[1] is not selected, skipped step 1 process.")
 
-	    ##############################################################################
+        ##############################################################################
 
         if 2 in self.convert_steps:
-	    ###############################################################################
-    	    # STEP 2: MOMENT ARM OPTIMIZATION
+            ###############################################################################
+            # STEP 2: MOMENT ARM OPTIMIZATION
 
             # The cvt1 model name path(after the 1st step general conversion) from default setting.
-            mjcModel_Cvt1_path = self.mjc_target_folder + "/" +\
-                            os.path.split(self.osim_model_file)[1][:-5] +\
-                            "_cvt1.xml"
+            mjcModel_Cvt1_path = (
+                self.mjc_target_folder + "/" + os.path.split(self.osim_model_file)[1][:-5] + "_cvt1.xml"
+            )
 
             # The cvt2 model name path(after the 2nd step convert) from default setting.
-            mjcModel_Cvt2_path = self.mjc_target_folder + "/" +\
-                            os.path.split(self.osim_model_file)[1][:-5] +\
-                            "_cvt2.xml"
+            mjcModel_Cvt2_path = (
+                self.mjc_target_folder + "/" + os.path.split(self.osim_model_file)[1][:-5] + "_cvt2.xml"
+            )
 
             # First check if the cvt2 model is already exist.
             # If so, then directly optimize on top of it.
@@ -183,18 +194,21 @@ class O2MSteps:
                 else:
                     logger.debug("xxx_cvt1 model file does not exist either, stopped!")
                     logger.debug("Please run [1] first to get the xxx_cvt1 model")
-                    raise ("xxx_cvt1 model file does not exist, cannot process following"
-                        "steps .. \n")
+                    raise ("xxx_cvt1 model file does not exist, cannot process followingsteps .. \n")
 
-    		# step 2 saving path
+            # step 2 saving path
             path_step2 = self.mjc_target_folder + "/Step2_muscleKinematics"
             pathlib.Path(path_step2).mkdir(exist_ok=True, parents=True)
 
             # apply moment arm convert
-            MA_Opt = MomentArmOpt(cvt2_model_path, self.osim_model_file, path_step2,
-                                  muscle_list=self.muscle_list,
-                                  osim_data_overwrite=self.osim_data_overwrite,
-    			                  speedy=self.speedy)
+            MA_Opt = MomentArmOpt(
+                cvt2_model_path,
+                self.osim_model_file,
+                path_step2,
+                muscle_list=self.muscle_list,
+                osim_data_overwrite=self.osim_data_overwrite,
+                speedy=self.speedy,
+            )
 
             if self.convert:
                 # optimize the side sites to get better moment arm fits
@@ -215,18 +229,18 @@ class O2MSteps:
         ###############################################################################
 
         if 3 in self.convert_steps:
- 	    ###############################################################################
- 	    # STEP 3: MUSCULE FORCE OPTIMIZATION
+            ###############################################################################
+            # STEP 3: MUSCULE FORCE OPTIMIZATION
 
             # The cvt2 model name path(after the 2nd step convert) from default setting.
-            mjcModel_Cvt2_path = self.mjc_target_folder + "/" +\
-                            os.path.split(self.osim_model_file)[1][:-5] +\
-                            "_cvt2.xml"
+            mjcModel_Cvt2_path = (
+                self.mjc_target_folder + "/" + os.path.split(self.osim_model_file)[1][:-5] + "_cvt2.xml"
+            )
 
             # The cvt3 model name path(after the 3rd step convert) from default setting.
-            mjcModel_Cvt3_path = self.mjc_target_folder + "/" +\
-                            os.path.split(self.osim_model_file)[1][:-5] +\
-                            "_cvt3.xml"
+            mjcModel_Cvt3_path = (
+                self.mjc_target_folder + "/" + os.path.split(self.osim_model_file)[1][:-5] + "_cvt3.xml"
+            )
 
             # First check if the cvt2 model is already exist.
             # If so, then directly optimize on top of it.
@@ -245,18 +259,21 @@ class O2MSteps:
                 else:
                     logger.debug("xxx_cvt2 model file does not exist either, stopped!")
                     logger.debug("Please run [2] first to get the xxx_cvt2 model")
-                    raise ("xxx_cvt2 model file does not exist, cannot process following"
-                        "steps .. \n")
+                    raise ("xxx_cvt2 model file does not exist, cannot process followingsteps .. \n")
 
-    		# step 3 saving path
+            # step 3 saving path
             path_step3 = self.mjc_target_folder + "/Step3_muscleKinetics"
             pathlib.Path(path_step3).mkdir(exist_ok=True, parents=True)
 
-    		# create an instance of the muscle force optimization
-            musForceOpt = MuscleForceOpt(cvt3_model_path, self.osim_model_file, path_step3,
-                                         muscle_list=self.muscle_list,
-                                         osim_data_overwrite=self.osim_data_overwrite,
-    			                         speedy=self.speedy)
+            # create an instance of the muscle force optimization
+            musForceOpt = MuscleForceOpt(
+                cvt3_model_path,
+                self.osim_model_file,
+                path_step3,
+                muscle_list=self.muscle_list,
+                osim_data_overwrite=self.osim_data_overwrite,
+                speedy=self.speedy,
+            )
 
             if self.convert:
                 # optimize muscle parameters and save optimized model as cvt3
@@ -274,13 +291,12 @@ class O2MSteps:
             else:
                 logger.info("Skipped step 3 validation - val3.")
 
-	    # ###############################################################################
+        # ###############################################################################
 
         # if pdf report required, then generate it from the plots that generated in the
         # converted folder.
         ###############################################################################
         if self.generate_pdf:
-
             logger.info("Generating pdf report based on the validation results.")
             logger.info("   This may take a while, suggest to do this after all validation steps...")
 
@@ -289,7 +305,9 @@ class O2MSteps:
             mjcModel_vlt3_path = self.mjc_target_folder + "/Step3_muscleKinetics"
             model_name = os.path.split(self.osim_model_file)[1][:-5]
 
-            pdf = generate_pdf(mjcModel_vlt1_path, mjcModel_vlt2_path, mjcModel_vlt3_path, model_name, self.mjc_target_folder)
+            pdf = generate_pdf(
+                mjcModel_vlt1_path, mjcModel_vlt2_path, mjcModel_vlt3_path, model_name, self.mjc_target_folder
+            )
 
             # generate pdf
             pdf.render(self.mjc_target_folder + "/" + model_name + ".pdf")

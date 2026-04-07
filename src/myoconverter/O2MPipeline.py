@@ -24,8 +24,8 @@ def O2MPipeline(osim_file, geometry_folder, output_folder, **kwargs):
     :param geometry_folder: Path to the Geometry folder
     :param output_folder: Path to folder where converted model is saved
     :param : Selected conversion steps, any subset of [1, 2, 3]
-    :param kwargs: convert_step, muscle_list, osim_data_overwrite, convert, 
-        validation, generate_pdf, speedy, add_ground_geom, 
+    :param kwargs: convert_step, muscle_list, osim_data_overwrite, convert,
+        validation, generate_pdf, speedy, add_ground_geom,
         treat_as_normal_path_point
     :return:
     """
@@ -55,22 +55,31 @@ def O2MPipeline(osim_file, geometry_folder, output_folder, **kwargs):
     logger.info(f"Start the conversion pipeline for : {MODEL_NAME}")
 
     # coordinate configure options
-    osim_data_overwrite = coordinate_kwargs(osim_file, output_folder, convert_steps,
-                                   osim_data_overwrite, conversion, validation, speedy)
+    osim_data_overwrite = coordinate_kwargs(
+        osim_file, output_folder, convert_steps, osim_data_overwrite, conversion, validation, speedy
+    )
 
-    O2MSteps_inst = O2MSteps(osim_file, geometry_folder, output_folder,
-                 convert_steps=convert_steps, muscle_list=muscle_list,
-                 osim_data_overwrite=osim_data_overwrite, convert=conversion,
-                 validation=validation, generate_pdf=generate_pdf, speedy=speedy,
-                 add_ground_geom=add_ground_geom, treat_as_normal_path_point=treat_as_normal_path_point)
+    O2MSteps_inst = O2MSteps(
+        osim_file,
+        geometry_folder,
+        output_folder,
+        convert_steps=convert_steps,
+        muscle_list=muscle_list,
+        osim_data_overwrite=osim_data_overwrite,
+        convert=conversion,
+        validation=validation,
+        generate_pdf=generate_pdf,
+        speedy=speedy,
+        add_ground_geom=add_ground_geom,
+        treat_as_normal_path_point=treat_as_normal_path_point,
+    )
 
     O2MSteps_inst.PipelineExecution()
 
     logger.remove()
 
 
-def coordinate_kwargs(osim_file, output_folder, convert_steps,
-                                   osim_data_overwrite, conversion, validation, speedy):
+def coordinate_kwargs(osim_file, output_folder, convert_steps, osim_data_overwrite, conversion, validation, speedy):
     """
     Some config flags may conflicting with each other, this coordinate step is to manage them.
     """
@@ -86,7 +95,6 @@ def coordinate_kwargs(osim_file, output_folder, convert_steps,
 
     # then check the last saved configure files in the second and third steps
     if 2 in convert_steps:
-
         logger.info("   Checking configurations for step 2 conversion.")
 
         if pathlib.Path(output_folder + "/Step2_muscleKinematics/config.pkl").is_file():
@@ -119,7 +127,6 @@ def coordinate_kwargs(osim_file, output_folder, convert_steps,
             pickle.dump(kwargs, config_save)
 
     if 3 in convert_steps:
-
         logger.info("   Checking configurations for step 3 conversion.")
 
         if pathlib.Path(output_folder + "/Step3_muscleKinetics/config.pkl").is_file():
@@ -155,35 +162,50 @@ def coordinate_kwargs(osim_file, output_folder, convert_steps,
 
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser(
+        description="Convert an OpenSim model into a MuJoCo model with accurate muscle kinetics."
+        "Only Works with OpenSim v4 models."
+    )
+    argparser.add_argument("osim_file", type=str, help="Path to an OpenSim model OSIM file")
+    argparser.add_argument(
+        "geometry_folder", type=str, help="Path to the Geometry folder (by default uses folder of given OpenSim file)"
+    )
+    argparser.add_argument(
+        "output_folder", type=str, help="Path to an output folder. The converted model will be saved here."
+    )
 
-    argparser = argparse.ArgumentParser(description="Convert an OpenSim model into a MuJoCo model with accurate muscle kinetics."
-                                                 "Only Works with OpenSim v4 models.")
-    argparser.add_argument("osim_file", type=str,
-                           help="Path to an OpenSim model OSIM file")
-    argparser.add_argument("geometry_folder", type=str,
-                           help="Path to the Geometry folder (by default uses folder of given OpenSim file)")
-    argparser.add_argument("output_folder", type=str,
-                           help="Path to an output folder. The converted model will be saved here.")
-
-    argparser.add_argument("--convert_steps", type=list, default=[1, 2, 3],
-                           help="Selected conversion steps, could be any subset of [1, 2, 3] based on the needs")
-    argparser.add_argument("--muscle_list", type=list, default=None,
-                           help="Selected muscles for the conversion steps")
-    argparser.add_argument("--osim_data_overwrite", default=False,
-                           help="If ture, overwrite extracted Osim model state files")
-    argparser.add_argument("--conversion", default=True,
-                           help="If true, perform the conversion functions of selected steps")
-    argparser.add_argument("--validation", default=True,
-                           help="If true, perform the validation functions of selected steps")
-    argparser.add_argument("--speedy", default=False,
-                           help="If true, reduce the number of checking notes in optimization steps")
-    argparser.add_argument("--generate_pdf", default=False,
-                           help="If true, generate a pdf report of the validation results")
-    argparser.add_argument("--add_ground_geom", default=False,
-                           help="If true, a geom (of type plane) is added to the MuJoCo model as ground")
-    argparser.add_argument("--treat_as_normal_path_point", default=False,
-                           help="If true, MovingPathPoints and ConditionalPathPoints will be treated as normal "
-                                "PathPoints")
+    argparser.add_argument(
+        "--convert_steps",
+        type=list,
+        default=[1, 2, 3],
+        help="Selected conversion steps, could be any subset of [1, 2, 3] based on the needs",
+    )
+    argparser.add_argument("--muscle_list", type=list, default=None, help="Selected muscles for the conversion steps")
+    argparser.add_argument(
+        "--osim_data_overwrite", default=False, help="If ture, overwrite extracted Osim model state files"
+    )
+    argparser.add_argument(
+        "--conversion", default=True, help="If true, perform the conversion functions of selected steps"
+    )
+    argparser.add_argument(
+        "--validation", default=True, help="If true, perform the validation functions of selected steps"
+    )
+    argparser.add_argument(
+        "--speedy", default=False, help="If true, reduce the number of checking notes in optimization steps"
+    )
+    argparser.add_argument(
+        "--generate_pdf", default=False, help="If true, generate a pdf report of the validation results"
+    )
+    argparser.add_argument(
+        "--add_ground_geom",
+        default=False,
+        help="If true, a geom (of type plane) is added to the MuJoCo model as ground",
+    )
+    argparser.add_argument(
+        "--treat_as_normal_path_point",
+        default=False,
+        help="If true, MovingPathPoints and ConditionalPathPoints will be treated as normal PathPoints",
+    )
     args = argparser.parse_args()
 
     # Do the pipeline

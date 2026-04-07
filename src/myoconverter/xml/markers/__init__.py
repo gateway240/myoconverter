@@ -1,1 +1,1 @@
-""" This package contains all parsers relevant to parsing the OpenSim `MarkerSet`. """
+"""This package contains all parsers relevant to parsing the OpenSim `MarkerSet`."""

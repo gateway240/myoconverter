@@ -17,7 +17,7 @@ from myoconverter.optimization.utils.UtilsMujoco import getMuscleForceLengthCurv
 def initializeWorker(shared_model) -> None:
     """
     Initialize the worker process.
-    
+
     INPUTS:
         shared_model
             the mujoco model
@@ -30,7 +30,7 @@ def initializeWorker(shared_model) -> None:
 def objFMMuscle(x, osim_fm, muscle: str, joints: list[str], jnt_arr, act_arr):
     """
     Calculate the muscle force differences between osim and mjc models.
-    
+
     INPUTS:
         x: vector
             optimizing parameters
@@ -56,7 +56,9 @@ def objFMMuscle(x, osim_fm, muscle: str, joints: list[str], jnt_arr, act_arr):
     mjc_fm, length_mtu = getMuscleForceLengthCurvesSim(mjc_model, muscle, joints, jnt_arr, act_arr)
 
     # calculate moment arm differences, osim and mjc has opposite sign in MA
-    return np.sqrt(np.sum((np.array(osim_fm).flatten() + np.array(mjc_fm).flatten())**2) / len(np.array(mjc_fm).flatten()))
+    return np.sqrt(
+        np.sum((np.array(osim_fm).flatten() + np.array(mjc_fm).flatten()) ** 2) / len(np.array(mjc_fm).flatten())
+    )
 
 
 @logger.catch
@@ -77,14 +79,18 @@ def getMuscleForceDiff(mjc_model, muscles, joints, jnt_arr, act_arr, osim_fp_mus
         logger.debug("osim and mjc models have different moment arm sizes")
         raise ("osim and mjc models have different moment arm sizes")
 
-    obj_org = np.sqrt(np.sum((osim_fp_muscles_joints_array + mjc_fp_muscles_joints_array)**2) / len(mjc_fp_muscles_joints_array))
+    obj_org = np.sqrt(
+        np.sum((osim_fp_muscles_joints_array + mjc_fp_muscles_joints_array) ** 2) / len(mjc_fp_muscles_joints_array)
+    )
 
     # absolute and relative errors
     abs_err = abs(osim_fp_muscles_joints_array + mjc_fp_muscles_joints_array)
 
     osim_fp_muscles_joints_array_nonzeros = np.maximum(abs(osim_fp_muscles_joints_array), 1e-3)
 
-    rel_err = abs((osim_fp_muscles_joints_array + mjc_fp_muscles_joints_array) / (osim_fp_muscles_joints_array_nonzeros))
+    rel_err = abs(
+        (osim_fp_muscles_joints_array + mjc_fp_muscles_joints_array) / (osim_fp_muscles_joints_array_nonzeros)
+    )
 
     # check if absolulte error larger than 0.001 and relative error larger than 5%
     err_ind.append(list(set(np.where(abs_err > 0.001)[0]) & set(np.where(rel_err > 0.05)[0])))
@@ -94,8 +100,9 @@ def getMuscleForceDiff(mjc_model, muscles, joints, jnt_arr, act_arr, osim_fp_mus
 
 # optimize muscle forces using the self-developed PSO Optimizer
 @logger.catch
-def fmOptPSO_cust(mjc_model_path, muscle, joints, jnt_arr, act_arr,
-                      osim_fm, optParam_lb, optParam_ub, cost_org, speedy=False):
+def fmOptPSO_cust(
+    mjc_model_path, muscle, joints, jnt_arr, act_arr, osim_fm, optParam_lb, optParam_ub, cost_org, speedy=False
+):
 
     # make sure the boundaries are array
     if type(optParam_lb) != np.ndarray:
@@ -105,9 +112,9 @@ def fmOptPSO_cust(mjc_model_path, muscle, joints, jnt_arr, act_arr,
         optParam_ub = np.array(optParam_ub)
 
     # PSO options
-    c1 = 0.3   # inherit rate from the best of the current particle itself
+    c1 = 0.3  # inherit rate from the best of the current particle itself
     c2 = 0.25  # inherit rate from the global best particle
-    w = 0.25   # inherit rate from the previous velocity
+    w = 0.25  # inherit rate from the previous velocity
 
     dimensions = len(optParam_lb)  # optimizing parameter demensions
 
@@ -121,12 +128,12 @@ def fmOptPSO_cust(mjc_model_path, muscle, joints, jnt_arr, act_arr,
         break_threshold = 0.5
 
     # initilize the optimization variables randomly inside the bounds
-    x = optParam_lb + np.random.uniform(low=0, high=1,
-             size=(n_particles, dimensions)) * (optParam_ub - optParam_lb)
+    x = optParam_lb + np.random.uniform(low=0, high=1, size=(n_particles, dimensions)) * (optParam_ub - optParam_lb)
 
     # initilize the velocities randomly inside the bounds
-    v = (optParam_lb - optParam_ub) + np.random.uniform(low=0, high=1,
-             size=(n_particles, dimensions)) * (optParam_ub - optParam_lb) * 2
+    v = (optParam_lb - optParam_ub) + np.random.uniform(low=0, high=1, size=(n_particles, dimensions)) * (
+        optParam_ub - optParam_lb
+    ) * 2
 
     # the best cost function for each particle is initilized as 0
     obj_b = np.zeros(n_particles)
@@ -144,9 +151,7 @@ def fmOptPSO_cust(mjc_model_path, muscle, joints, jnt_arr, act_arr,
     shared_model = mujoco.MjModel.from_xml_path(mjc_model_path)
 
     with mp.Pool(initializer=initializeWorker, initargs=(shared_model,)) as pool:
-
         while itera < iteration_max:
-
             # Apply parallel computing using multiprocessing
             # Right now, the mujoco sim cannot be pickled and transfer to objective function
             # To solve this, mujoco file name need to transfer to objective function and load over there.
@@ -186,7 +191,9 @@ def fmOptPSO_cust(mjc_model_path, muscle, joints, jnt_arr, act_arr,
             for i, ix in enumerate(x):
                 x[i] = np.minimum(np.maximum(ix, optParam_lb), optParam_ub)
 
-            logger.info(f"        PSO iteration: {itera} ; {round(similar_particles * 100 / n_particles)} percentage similarities; Best obj: {np.round(obj_g, 5)}")
+            logger.info(
+                f"        PSO iteration: {itera} ; {round(similar_particles * 100 / n_particles)} percentage similarities; Best obj: {np.round(obj_g, 5)}"
+            )
 
             itera = itera + 1  # increase the iteration number
 
@@ -206,7 +213,9 @@ def fmOptPSO_cust(mjc_model_path, muscle, joints, jnt_arr, act_arr,
             obj_g_old = obj_g
 
             if obj_g_iter > 10:
-                logger.info("        Break the optimization, since global obj maintained the same value for certain iterations")
+                logger.info(
+                    "        Break the optimization, since global obj maintained the same value for certain iterations"
+                )
                 break
 
     # update mjc model with new muscle parameters

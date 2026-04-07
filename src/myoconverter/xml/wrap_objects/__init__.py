@@ -1,1 +1,1 @@
-""" This package contains all parsers relevant to parsing the OpenSim `WrapObjectSet`. """
+"""This package contains all parsers relevant to parsing the OpenSim `WrapObjectSet`."""

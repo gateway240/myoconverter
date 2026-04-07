@@ -20,7 +20,7 @@ from myoconverter.optimization.utils.UtilsMujoco import (
 def initializeWorker(shared_model) -> None:
     """
     Initialize the worker process.
-    
+
     INPUTS:
         shared_model
             the mujoco model
@@ -30,53 +30,54 @@ def initializeWorker(shared_model) -> None:
 
 
 # @logger.catch
-def objMAMuscle(x, side_id, wrap_type, wrap_id, pos_wrap, size_wrap, rotation_wrap,
-                osim_ma, muscle, joints, joint_ranges, evalN):
-    """ this objective function calculate the difference of moment arms between opensim model and mujoco model.
-	
-	Inputs:
+def objMAMuscle(
+    x, side_id, wrap_type, wrap_id, pos_wrap, size_wrap, rotation_wrap, osim_ma, muscle, joints, joint_ranges, evalN
+):
+    """this objective function calculate the difference of moment arms between opensim model and mujoco model.
 
-        x: vector
-            optimization vectors
-        side_id: int
-            the id list of the optimization sides
-        wrap_type: string
-            the type defined in O2MStep2
-        wrap_id: int
-            wrapping object id
-        pos_wrap: vector
-            the position of the wrapping object
-        size_wrap: vector
-            the size of the wrapping object
-        rotation_wrap: vector
-            the rotation vector of the wrapping object
-        osim_ma: vector
-            the moment arm vector of the osim model
-        muscle: string
-            muscle name
-        joints: list of string
-            the coordinates that the moment arms are caclulated
-        angle_ranges: list
-            the motion ranges of the mentioned coordinates
-        evalN: int
-            the number of evaluation points for the moment arm calculation
+    Inputs:
 
-	Outputs:
-		rms_ma: root mean square of the moment arm difference.
-        rms_x: root mean square of the optimizing parameters. 
-	"""
+           x: vector
+               optimization vectors
+           side_id: int
+               the id list of the optimization sides
+           wrap_type: string
+               the type defined in O2MStep2
+           wrap_id: int
+               wrapping object id
+           pos_wrap: vector
+               the position of the wrapping object
+           size_wrap: vector
+               the size of the wrapping object
+           rotation_wrap: vector
+               the rotation vector of the wrapping object
+           osim_ma: vector
+               the moment arm vector of the osim model
+           muscle: string
+               muscle name
+           joints: list of string
+               the coordinates that the moment arms are caclulated
+           angle_ranges: list
+               the motion ranges of the mentioned coordinates
+           evalN: int
+               the number of evaluation points for the moment arm calculation
+
+    Outputs:
+            rms_ma: root mean square of the moment arm difference.
+           rms_x: root mean square of the optimizing parameters.
+    """
 
     global mjc_model
 
     if type(joints) != list:  # check if the joints are in a list or not
         joints = [joints]
 
-    rms_ma = 0   # initialize the rms_ma
+    rms_ma = 0  # initialize the rms_ma
 
-   	# update mjc model with new attaching_list and wrapping_list
+    # update mjc model with new attaching_list and wrapping_list
     mjcModel = updateWrapSites(mjc_model, wrap_type, wrap_id, pos_wrap, size_wrap, rotation_wrap, side_id, x)
 
-   	# calculate moment arm
+    # calculate moment arm
     mjc_ma = computeMomentArmMuscleJoints(mjcModel, muscle, joints, joint_ranges, evalN)
 
     # check the list length
@@ -93,7 +94,9 @@ def objMAMuscle(x, side_id, wrap_type, wrap_id, pos_wrap, size_wrap, rotation_wr
     # calculate moment arm differences
     # osim and mjc has opposite sign in MA, so 'add' is used ...
     # also change the value from m to cm to have better understanding...
-    rms_ma = np.sqrt(np.sum((np.array(osim_ma).flatten() + np.array(mjc_ma).flatten())**2) / len(np.array(mjc_ma).flatten()))
+    rms_ma = np.sqrt(
+        np.sum((np.array(osim_ma).flatten() + np.array(mjc_ma).flatten()) ** 2) / len(np.array(mjc_ma).flatten())
+    )
 
     return rms_ma
 
@@ -115,9 +118,7 @@ def getMomentArmDiff(mjc_model, muscle, joints, jnt_motion_range, osim_ma_joints
         joints = [joints]
 
     # get moment arms from the mjc model
-    mjc_ma_joints = np.squeeze(computeMomentArmMuscleJoints(mjc_model,
-                                                        muscle, joints,
-                                                        jnt_motion_range, evalN))
+    mjc_ma_joints = np.squeeze(computeMomentArmMuscleJoints(mjc_model, muscle, joints, jnt_motion_range, evalN))
 
     # check the list length
     if len(osim_ma_joints) != len(mjc_ma_joints):
@@ -129,7 +130,7 @@ def getMomentArmDiff(mjc_model, muscle, joints, jnt_motion_range, osim_ma_joints
     osim_ma_joints_array = (np.array(osim_ma_joints)).flatten()
     mjc_ma__joints_array = (np.array(mjc_ma_joints)).flatten()
 
-    obj_org = obj_org + np.sqrt(np.sum((osim_ma_joints_array + mjc_ma__joints_array)**2) / len(osim_ma_joints_array))
+    obj_org = obj_org + np.sqrt(np.sum((osim_ma_joints_array + mjc_ma__joints_array) ** 2) / len(osim_ma_joints_array))
 
     # absolute and relative errors
     abs_err = abs(osim_ma_joints_array + mjc_ma__joints_array)
@@ -139,18 +140,34 @@ def getMomentArmDiff(mjc_model, muscle, joints, jnt_motion_range, osim_ma_joints
     rel_err = abs((osim_ma_joints_array + mjc_ma__joints_array) / (osim_ma_joints_array_nonzeros))
 
     # check if absolulte error larger than 0.001 and relative error larger than 5%
-    err_ind = (list(set(np.where(abs_err > 0.001)[0]) & set(np.where(rel_err > 0.05)[0])))
+    err_ind = list(set(np.where(abs_err > 0.001)[0]) & set(np.where(rel_err > 0.05)[0]))
 
     return err_ind, obj_org
 
 
 # optimize wrapping side using the self-developed PSO Optimizer
 # @logger.catch
-def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_type, wrap_id, pos_wrap, size_wrap,
-               rotation_wrap, osim_ma, evalN, optParam_lb, optParam_ub, cost_org, speedy=False):
+def maOptPSO_cust(
+    mjc_model_path,
+    muscle,
+    joints,
+    joint_ranges,
+    side_id,
+    wrap_type,
+    wrap_id,
+    pos_wrap,
+    size_wrap,
+    rotation_wrap,
+    osim_ma,
+    evalN,
+    optParam_lb,
+    optParam_ub,
+    cost_org,
+    speedy=False,
+):
     """
     This is a self-defined particle swarm optimizer (PSO) for the moment arm optimization. The purpurse of define
-    it here, instead of using other packages, is to gain custmizied feature control. 
+    it here, instead of using other packages, is to gain custmizied feature control.
     This is a temporary solution, eventually, these features should be added to the exist PSO python packages and
     use them as the optimizor
 
@@ -200,9 +217,9 @@ def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_ty
         optParam_ub = np.array(optParam_ub)
 
     # PSO options
-    c1 = 0.3   # inherit rate from the best of the current particle itself
+    c1 = 0.3  # inherit rate from the best of the current particle itself
     c2 = 0.3  # inherit rate from the global best particle
-    w = 0.4   # inherit rate from the previous velocity
+    w = 0.4  # inherit rate from the previous velocity
 
     dimensions = len(optParam_lb)  # optimizing parameter demensions
 
@@ -216,12 +233,12 @@ def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_ty
         break_threshold = 0.5
 
     # initilize the optimization variables randomly inside the bounds
-    x = optParam_lb + np.random.uniform(low=0, high=1,
-             size=(n_particles, dimensions)) * (optParam_ub - optParam_lb)
+    x = optParam_lb + np.random.uniform(low=0, high=1, size=(n_particles, dimensions)) * (optParam_ub - optParam_lb)
 
     # initilize the velocities randomly inside the bounds
-    v = (optParam_lb - optParam_ub) + np.random.uniform(low=0, high=1,
-             size=(n_particles, dimensions)) * (optParam_ub - optParam_lb) * 2
+    v = (optParam_lb - optParam_ub) + np.random.uniform(low=0, high=1, size=(n_particles, dimensions)) * (
+        optParam_ub - optParam_lb
+    ) * 2
 
     # the best cost function for each particle is initilized as 0
     obj_b = np.zeros(n_particles)
@@ -239,9 +256,7 @@ def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_ty
     shared_model = mujoco.MjModel.from_xml_path(mjc_model_path)
 
     with mp.Pool(initializer=initializeWorker, initargs=(shared_model,)) as pool:
-
-        while itera < iteration_max:   # define the maximum iteration value
-
+        while itera < iteration_max:  # define the maximum iteration value
             # Apply parallel computing using multiprocessing
             # Right now, the mujoco sim cannot be pickled and transfer to objective function
             # To solve this, mujoco file name need to transfer to objective function and load over there.
@@ -249,10 +264,20 @@ def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_ty
             # prepare function inputs
             x_input = []
             for ix in x:
-                x_input.append((ix, side_id, wrap_type,
-                                    wrap_id, pos_wrap, size_wrap,
-                                    rotation_wrap, osim_ma,
-                                    muscle, joints, joint_ranges, evalN))
+                x_input.append((
+                    ix,
+                    side_id,
+                    wrap_type,
+                    wrap_id,
+                    pos_wrap,
+                    size_wrap,
+                    rotation_wrap,
+                    osim_ma,
+                    muscle,
+                    joints,
+                    joint_ranges,
+                    evalN,
+                ))
 
             obj_list = pool.starmap(objMAMuscle, x_input)
 
@@ -272,7 +297,9 @@ def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_ty
                         obj_g = obj
                         g = x[iobj]
 
-            logger.info(f"        PSO iteration: {itera} ; {round(similar_particles * 100 / n_particles)} percentage similarities; Best obj: {np.round(obj_g, 5)}")
+            logger.info(
+                f"        PSO iteration: {itera} ; {round(similar_particles * 100 / n_particles)} percentage similarities; Best obj: {np.round(obj_g, 5)}"
+            )
 
             # two random values to increase intersection between particles
             r1 = np.random.rand(1)
@@ -304,7 +331,9 @@ def maOptPSO_cust(mjc_model_path, muscle, joints, joint_ranges, side_id, wrap_ty
             obj_g_old = obj_g
 
             if obj_g_iter > 10:
-                logger.info("        Break the optimization, since global obj maintained the same value for certain iterations")
+                logger.info(
+                    "        Break the optimization, since global obj maintained the same value for certain iterations"
+                )
                 break
 
     # update mjc model with new attaching_list and wrapping_list

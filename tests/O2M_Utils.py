@@ -118,12 +118,10 @@ def get_control(model, control_file):
 def parse_sto_file(sto_file):
 
     with pathlib.Path(sto_file).open() as file:
-
         # Go through header and parse it
         header_found = False
         header = dict()
         for row in file:
-
             # Get rid of newline
             row = row.rstrip()
 
@@ -170,8 +168,9 @@ def reindex_dataframe(df, new_index):
     return new_df
 
 
-def estimate_error(reference, simulated, target_names=None, timesteps=None, plot=False, output_file=None,
-                   error="squared_sum"):
+def estimate_error(
+    reference, simulated, target_names=None, timesteps=None, plot=False, output_file=None, error="squared_sum"
+):
 
     # Reference and simulated need to be same shape
     if reference.shape != simulated.shape:
@@ -276,7 +275,6 @@ def initialise_simulation(sim, initial_states=None, timestep=None):
 
     # Set initial states
     if initial_states is not None:
-
         # Set given joint position and velocity values, and control values
         if "qpos" in initial_states:
             sim.data.qpos[:] = deepcopy(initial_states["qpos"])
@@ -303,7 +301,6 @@ def initialise_full_qpos(sim):
 
     # Go through these constraints
     for eq_id in eq_ids:
-
         # Skip if this constraint is inactive
         if not sim.model.eq_active[eq_id]:
             continue
@@ -342,7 +339,6 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
     was_exception = False
     # For recording / viewing purposes
     if viewer is not None and output_video_file is not None:
-
         # Make sure output folder exists
         pathlib.Path(os.path.dirname(output_video_file)).mkdir(exist_ok=True, parents=True)
 
@@ -352,17 +348,16 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
         fs = 120
 
         # Get writer
-        writer = skvideo.io.FFmpegWriter(output_video_file,
-                                         inputdict={"-s": f"{width}x{height}",
-                                                    "-r": str(fs)}, outputdict={"-pix_fmt": "yuv420p"})
-                                                    # "-r": str(0.1/sim.model.opt.timestep)})
+        writer = skvideo.io.FFmpegWriter(
+            output_video_file, inputdict={"-s": f"{width}x{height}", "-r": str(fs)}, outputdict={"-pix_fmt": "yuv420p"}
+        )
+        # "-r": str(0.1/sim.model.opt.timestep)})
 
         # Get indices of frames to be recorded
         frame_idxs = np.arange(0, len(controls), (1 / fs) / sim.model.opt.timestep).astype(int)
 
     # We assume there's one set of controls for each timestep
     for t in range(len(controls)):
-
         # Set muscle activations
         sim.data.ctrl[:] = controls[t, :]
 
@@ -393,7 +388,16 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
                     head_tail = os.path.split(output_video_file)
                     pathlib.Path(head_tail[0] + "/" + head_tail[1].split(".mp4")[0]).mkdir(exist_ok=True, parents=True)
                     # skvideo.io.vwrite(head_tail[0]+"/tempStore/"+head_tail[1].split('.mp4')[0]+str(t)+".png", img)
-                    matplotlib.image.imsave(head_tail[0] + "/" + head_tail[1].split(".mp4")[0] + "/" + head_tail[1].split(".mp4")[0] + str(t).zfill(4) + ".png", img)
+                    matplotlib.image.imsave(
+                        head_tail[0]
+                        + "/"
+                        + head_tail[1].split(".mp4")[0]
+                        + "/"
+                        + head_tail[1].split(".mp4")[0]
+                        + str(t).zfill(4)
+                        + ".png",
+                        img,
+                    )
                     was_exception = True
 
     if viewer is not None and output_video_file is not None:
@@ -404,12 +408,25 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
             print("Couldnt write the video but single images are in " + head_tail[0] + "/tempStore/")
             # Create the video
 
-            cmd = ["ffmpeg",
-                                "-r", str(fs),
-                                "-i", os.path.join(head_tail[0] + "/" + head_tail[1].split(".mp4")[0] + "/" + head_tail[1].split(".mp4")[0] + "%04d.png"),
-                               "-s", f"{width}x{height}",
-                                "-pix_fmt", "yuv420p",
-                                output_video_file]
+            cmd = [
+                "ffmpeg",
+                "-r",
+                str(fs),
+                "-i",
+                os.path.join(
+                    head_tail[0]
+                    + "/"
+                    + head_tail[1].split(".mp4")[0]
+                    + "/"
+                    + head_tail[1].split(".mp4")[0]
+                    + "%04d.png"
+                ),
+                "-s",
+                f"{width}x{height}",
+                "-pix_fmt",
+                "yuv420p",
+                output_video_file,
+            ]
             print("run:" + " ".join(cmd))
             # subprocess.call(cmd)
 
@@ -466,20 +483,19 @@ def get_target_states(model, unordered_states, target_states, target_state_indic
 
 def get_xpos(sim, targets, type="dict"):
 
-  # Get xyz positions and rotations for pelvis, right/left hand and feet
-  xpos = {}
-  if "body" in targets:
-    for target in targets["body"]:
-      xpos[target] = deepcopy(sim.data.body_xpos[sim.model._body_name2id[target]])
-  if "geom" in targets:
-    for target in targets["geom"]:
-      xpos[target] = deepcopy(sim.data.geom_xpos[sim.model._geom_name2id[target]])
+    # Get xyz positions and rotations for pelvis, right/left hand and feet
+    xpos = {}
+    if "body" in targets:
+        for target in targets["body"]:
+            xpos[target] = deepcopy(sim.data.body_xpos[sim.model._body_name2id[target]])
+    if "geom" in targets:
+        for target in targets["geom"]:
+            xpos[target] = deepcopy(sim.data.geom_xpos[sim.model._geom_name2id[target]])
 
-  return xpos
+    return xpos
 
 
 class Parameters:
-
     def __init__(self, motor_idxs, muscle_idxs, joint_idxs, initial_values=[1, 1, 1]):
         self.motor_idxs = motor_idxs
         self.nmotors = len(motor_idxs)
@@ -537,12 +553,18 @@ class Parameters:
             idx += 1
 
     def get_values(self):
-        return np.concatenate((self.gear, self.scale, self.tendon_stiffness, self.tendon_damping,
-                               self.dof_damping, self.jnt_solimp))
+        return np.concatenate((
+            self.gear,
+            self.scale,
+            self.tendon_stiffness,
+            self.tendon_damping,
+            self.dof_damping,
+            self.jnt_solimp,
+        ))
 
     def get_cost(self, values, f):
         # Return sum of all parameters except jnt_solimp after transforming with function f
-        return np.sum(f(values[:-self.njoints]))
+        return np.sum(f(values[: -self.njoints]))
 
     def set_values(self, values):
         last_idx = self.nmotors

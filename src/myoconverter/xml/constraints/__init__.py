@@ -1,1 +1,1 @@
-""" This package contains all parsers relevant to parsing the OpenSim `ConstraintSet`. """
+"""This package contains all parsers relevant to parsing the OpenSim `ConstraintSet`."""

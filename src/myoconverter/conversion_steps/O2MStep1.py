@@ -22,26 +22,26 @@ from myoconverter.xml.converter import convert
 
 
 class BasicModelConvert:
-    """ Class convert OpenSim MSK model to MuJoCo xml format.
-    
-        Bodies, joints, muscles, ligaments, sites, constraints
-        are all converted. 
-        Forward kinematic check is perfomed for validating the
-        accuracy of the bone shapes and joint definitions.
-    
+    """Class convert OpenSim MSK model to MuJoCo xml format.
+
+    Bodies, joints, muscles, ligaments, sites, constraints
+    are all converted.
+    Forward kinematic check is perfomed for validating the
+    accuracy of the bone shapes and joint definitions.
+
     """
 
-    def __init__(self, osim_model_file, geometry_path, saving_path,
-                 add_ground_geom=False, treat_as_normal_path_point=False):
+    def __init__(
+        self, osim_model_file, geometry_path, saving_path, add_ground_geom=False, treat_as_normal_path_point=False
+    ):
+        """Paremters
 
-        """ Paremters
-        
         osim_model_file: string
             The path of osim model to be converted.
-            
+
         geometry_path: string
             The path of the osim model mesh files.
-            
+
         saving_path: string
             The path to save converted model.
 
@@ -50,7 +50,7 @@ class BasicModelConvert:
 
         treat_as_normal_path_point: boolean
             If true, treat moving and conditional points as fixed points
-        
+
         """
 
         # check model file and path
@@ -79,13 +79,13 @@ class BasicModelConvert:
         self.treat_as_normal_path_point = treat_as_normal_path_point
 
     def cvt1_ModelConvert(self):
-        """ 
-            Convert the osim model into mujoco using the functions in xml folder
+        """
+        Convert the osim model into mujoco using the functions in xml folder
         """
 
         # define the model saving path
-        model_saving_path = self.saving_path[0:self.saving_path.rfind("/")]
-        osim_file_name = self.osim_model_file[self.osim_model_file.rfind("/"):]
+        model_saving_path = self.saving_path[0 : self.saving_path.rfind("/")]
+        osim_file_name = self.osim_model_file[self.osim_model_file.rfind("/") :]
 
         kwargs = {}  # define kwargs inputs
         kwargs["geometry_folder"] = self.geometry_path
@@ -98,20 +98,20 @@ class BasicModelConvert:
         return self.converted_mjc_model_file
 
     def vlt1_forwardKinematicsValidation(self, mjc_model_path=None, end_points_osim=None, speedy=False):
-        """ Forward kinematic check
-            Use markers at the surface of the body to compare the end point positions
-            based on the same joint angle setups in both models.
-            
-            Parameters:
-            
-            mjc_model_path: string
-                The mujoco model path.
-                
-            end_points_osim: list of strings
-                A list of marker names that defined in the Osim model for the forward kinematic check
-                
-            speedy: boolean
-                If True, run lower number of posture check [5 <--> 10].
+        """Forward kinematic check
+        Use markers at the surface of the body to compare the end point positions
+        based on the same joint angle setups in both models.
+
+        Parameters:
+
+        mjc_model_path: string
+            The mujoco model path.
+
+        end_points_osim: list of strings
+            A list of marker names that defined in the Osim model for the forward kinematic check
+
+        speedy: boolean
+            If True, run lower number of posture check [5 <--> 10].
 
         """
 
@@ -164,7 +164,7 @@ class BasicModelConvert:
             pickle.dump(jnt_ranges_osim, jnt_ranges_osim_file)
 
         with pathlib.Path(self.saving_path + "/jnt_ranges_mjc.pkl").open("wb") as jnt_ranges_mjc_file:
-           pickle.dump(jnt_ranges_mjc, jnt_ranges_mjc_file)
+            pickle.dump(jnt_ranges_mjc, jnt_ranges_mjc_file)
 
         logger.info("Finished with joint operation range check. Saved Results")
 
@@ -184,7 +184,6 @@ class BasicModelConvert:
         mr_rms = []  # RMS of the end point location differeOUTPUT_FOLDERnces
 
         for nm in range(marNum):
-
             logger.info(f"Endpoint : {end_points[nm]}")
 
             # plot in a x, y, x subplot way, all markers will be included in to one subplot
@@ -206,7 +205,7 @@ class BasicModelConvert:
             # convert to array
             mjc_mr = np.array(mjc_mr)
 
-            mr_rms.append((np.sqrt((osim_mr - [1, 1, -1] * mjc_mr[:, [0, 2, 1]])**2)).sum(axis=1))
+            mr_rms.append((np.sqrt((osim_mr - [1, 1, -1] * mjc_mr[:, [0, 2, 1]]) ** 2)).sum(axis=1))
 
             x = np.linspace(1, len(mjc_mr[:, 0]), len(mjc_mr[:, 0]))
 
@@ -260,11 +259,17 @@ class BasicModelConvert:
             axx = barPlot.add_subplot(numSubPlot, 1, subPlot + 1)
             if subPlot == numSubPlot - 1:
                 if not resSubPlotMar == 0:  # if resSubPlotMarker is not 0.
-                    plt.boxplot(mr_rms[subPlot * subPlotMarkerNum:])
-                    plt.xticks(np.linspace(1, resSubPlotMar, resSubPlotMar, dtype=int), end_points[subPlot * subPlotMarkerNum:(subPlot + 1) * subPlotMarkerNum])
+                    plt.boxplot(mr_rms[subPlot * subPlotMarkerNum :])
+                    plt.xticks(
+                        np.linspace(1, resSubPlotMar, resSubPlotMar, dtype=int),
+                        end_points[subPlot * subPlotMarkerNum : (subPlot + 1) * subPlotMarkerNum],
+                    )
             else:
-                plt.boxplot(mr_rms[subPlot * subPlotMarkerNum:(subPlot + 1) * subPlotMarkerNum])
-                plt.xticks(np.linspace(1, subPlotMarkerNum, subPlotMarkerNum, dtype=int), end_points[subPlot * subPlotMarkerNum:(subPlot + 1) * subPlotMarkerNum])
+                plt.boxplot(mr_rms[subPlot * subPlotMarkerNum : (subPlot + 1) * subPlotMarkerNum])
+                plt.xticks(
+                    np.linspace(1, subPlotMarkerNum, subPlotMarkerNum, dtype=int),
+                    end_points[subPlot * subPlotMarkerNum : (subPlot + 1) * subPlotMarkerNum],
+                )
             # plt.xticks(rotation=90)
             if subPlot == 0:
                 plt.title("RMS errors of end points at checking postures")

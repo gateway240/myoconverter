@@ -1,1 +1,1 @@
-""" This package contains all parsers relevant to parsing the OpenSim `PathPointSet`. """
+"""This package contains all parsers relevant to parsing the OpenSim `PathPointSet`."""

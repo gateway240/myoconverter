@@ -32,31 +32,31 @@ class MomentArmOpt:
     Class to optimize muscle moment arms of mujoco model
     """
 
-    def __init__(self, mjc_model_path, osim_model_path, save_path, muscle_list=None,
-                 osim_data_overwrite=False, speedy=False):
-
+    def __init__(
+        self, mjc_model_path, osim_model_path, save_path, muscle_list=None, osim_data_overwrite=False, speedy=False
+    ):
         """
         Parameters
         ----------
         mjc_model_path : string
             The model path of mjc model
-            
+
         osim_model_path : string
             The model path of osim model
-            
+
         save_path : string
             The path to save moment arm results
-            
+
         muscle_list : list of string, optional
             List of muscle names whose moment arms will be optimized
-            
+
         osim_data_overwrite : boolean, optional
             If True, overwrite osim state data
 
         speedy : boolean, optional
             If True, select a lower number of particles, checking notes, iterations
             to speed up the optimization process.
-            
+
         Returns
         -------
         None.
@@ -71,7 +71,6 @@ class MomentArmOpt:
         # if muscle list is not provided, then explore all muscles that included
         # in the OpenSim model.
         if not muscle_list:
-
             osim_muscles = self.osim_model.getMuscles()  # osim muscle class
 
             # update the global muscle list variable with all muscle names inside
@@ -103,7 +102,6 @@ class MomentArmOpt:
         ang_ranges_mjc, free_jnt_id_mjc = getCoordinateRange_mjc(self.mjc_model)
 
         if osim_data_overwrite:
-
             logger.info("Overwrite command confirmed")
             logger.info("Generating MA data from OsimMuscleStates, may take a while")
 
@@ -111,8 +109,7 @@ class MomentArmOpt:
             osim_mus_sta = OsimMuscleStates(self.osim_model, self.muscle_list)
 
             # regenerate moment arms from osim model
-            osim_mus_sta.getMomentArms(save_path=self.save_path,
-                                       speedy=speedy)
+            osim_mus_sta.getMomentArms(save_path=self.save_path, speedy=speedy)
 
             for mus_name in self.muscle_list:
                 # add mujoco joint range information, in case the joint range are different.
@@ -136,24 +133,21 @@ class MomentArmOpt:
                     muscle_saving.close()
 
         else:
-
             logger.info("Overwrite not required")
             logger.info("checking if the muscle data file exist")
 
             # Overwrite not required, checking if the muscle data file exist
             # If not, will be regenerated
             for mus_name in self.muscle_list:
-
                 if not pathlib.Path(self.save_path + "/" + mus_name + ".pkl").is_file():
                     logger.info(f"Muscle: {mus_name} data file does not exist, regenerating")
 
                     osim_mus_sta = OsimMuscleStates(self.osim_model, mus_name)
                     # regenerate moment arms
-                    osim_mus_sta.getMomentArms(save_path=self.save_path,
-                                            speedy=speedy)
+                    osim_mus_sta.getMomentArms(save_path=self.save_path, speedy=speedy)
 
                     # add mujoco joint range information, in case the joint range are different.
-                                # load saved muscle ma data file
+                    # load saved muscle ma data file
                     with pathlib.Path(self.save_path + "/" + mus_name + ".pkl").open("rb") as muscle_file:
                         muscle_para_ma = pickle.load(muscle_file)
 
@@ -178,14 +172,13 @@ class MomentArmOpt:
         logger.info("Finished cvt2 initialize")
 
     def optMomentArms(self):
-
         """
         This function optimize wrapping sites in order to have matching moment
         arms with a given data set (osim_ma_data)
-        
+
         Parameters
         ----------
-        
+
         Returns
         -------
         cvt2_model_path: string
@@ -195,7 +188,6 @@ class MomentArmOpt:
         logger.info("Running MA optimization with the given muscle list one by one")
 
         for muscle in self.muscle_list:
-
             logger.info(f"Muscle : {muscle} ")
 
             # load saved muscle ma data file
@@ -208,20 +200,23 @@ class MomentArmOpt:
             opt_res_list = len(muscle_para["wrapping_coordinates"]) * [None]  # initilize results list
 
             for i_jnt, joints in enumerate(muscle_para["wrapping_coordinates"]):  # run through the joint combinations
-
                 logger.info(f"    At joints: {joints[0]}")
 
                 # check if MA differences are larger than the thresholds
                 # absolulte error larger than 0.001 and relative error larger than 5%
-                err_ind, cost_org = getMomentArmDiff(self.mjc_model,
-                                                        muscle,
-                                                        joints,
-                                                        muscle_para["mjc_coordinate_ranges"][i_jnt],
-                                                        muscle_para["osim_ma_data"][i_jnt],
-                                                        muscle_para["evalN"][i_jnt])
+                err_ind, cost_org = getMomentArmDiff(
+                    self.mjc_model,
+                    muscle,
+                    joints,
+                    muscle_para["mjc_coordinate_ranges"][i_jnt],
+                    muscle_para["osim_ma_data"][i_jnt],
+                    muscle_para["evalN"][i_jnt],
+                )
 
                 if not err_ind:
-                    logger.info("    MA errors between Osim and Mjc models are smaller than throshold, optimization skipped")
+                    logger.info(
+                        "    MA errors between Osim and Mjc models are smaller than throshold, optimization skipped"
+                    )
                     # still save the optimization data
                     opt_res_list[i_jnt] = {"cost_org": cost_org, "cost_opt": cost_org, "par_opt": []}
 
@@ -229,7 +224,9 @@ class MomentArmOpt:
 
                 logger.info("    Start MA optimization")
 
-                if not muscle_para["wrapping_info"][i_jnt]:  # if the wrapping information is None, do not run optimization
+                if not muscle_para["wrapping_info"][
+                    i_jnt
+                ]:  # if the wrapping information is None, do not run optimization
                     logger.info("    No wrapping information extracted, skipped")
                     # still save the optimization data
                     opt_res_list[i_jnt] = {"cost_org": cost_org, "cost_opt": cost_org, "par_opt": []}
@@ -264,7 +261,7 @@ class MomentArmOpt:
                     continue
 
                 if "cylinder" in wrap_info[0]:
-                # do normal optimzation of the sidesite location
+                    # do normal optimzation of the sidesite location
 
                     # save the updated model
                     cvt2_model_path = self.mjc_model_path[0:-8] + "cvt2.xml"
@@ -281,18 +278,29 @@ class MomentArmOpt:
                     optParam_ub.append(size_wrap[1])
 
                     # run optimization with PSO optimizer
-                    opt_site, self.mjc_model = maOptPSO_cust(cvt2_model_path, muscle, joints,
-                                                        muscle_para["mjc_coordinate_ranges"][i_jnt],
-                                                        side_id, wrap_type_opt, wrap_id, pos_wrap,
-                                                        size_wrap, rot_wrap,
-                                                        muscle_para["osim_ma_data"][i_jnt],
-                                                        muscle_para["evalN"][i_jnt],
-                                                        optParam_lb, optParam_ub, cost_org, speedy=self.speedy)
+                    opt_site, self.mjc_model = maOptPSO_cust(
+                        cvt2_model_path,
+                        muscle,
+                        joints,
+                        muscle_para["mjc_coordinate_ranges"][i_jnt],
+                        side_id,
+                        wrap_type_opt,
+                        wrap_id,
+                        pos_wrap,
+                        size_wrap,
+                        rot_wrap,
+                        muscle_para["osim_ma_data"][i_jnt],
+                        muscle_para["evalN"][i_jnt],
+                        optParam_lb,
+                        optParam_ub,
+                        cost_org,
+                        speedy=self.speedy,
+                    )
 
                     opt_res_list[i_jnt] = opt_site  # save opt results
 
                 elif "sphere" in wrap_info[0]:
-                # do normal optimzation of the sidesite location
+                    # do normal optimzation of the sidesite location
 
                     # save the updated model
                     cvt2_model_path = self.mjc_model_path[0:-8] + "cvt2.xml"
@@ -309,25 +317,35 @@ class MomentArmOpt:
                     optParam_ub.append(pi)
 
                     # run optimization with PSO optimizer
-                    opt_site, self.mjc_model = maOptPSO_cust(cvt2_model_path, muscle, joints,
-                                                        muscle_para["mjc_coordinate_ranges"][i_jnt],
-                                                        side_id, wrap_type_opt, wrap_id, pos_wrap,
-                                                        size_wrap, rot_wrap,
-                                                        muscle_para["osim_ma_data"][i_jnt],
-                                                        muscle_para["evalN"][i_jnt],
-                                                        optParam_lb, optParam_ub, cost_org, speedy=self.speedy)
+                    opt_site, self.mjc_model = maOptPSO_cust(
+                        cvt2_model_path,
+                        muscle,
+                        joints,
+                        muscle_para["mjc_coordinate_ranges"][i_jnt],
+                        side_id,
+                        wrap_type_opt,
+                        wrap_id,
+                        pos_wrap,
+                        size_wrap,
+                        rot_wrap,
+                        muscle_para["osim_ma_data"][i_jnt],
+                        muscle_para["evalN"][i_jnt],
+                        optParam_lb,
+                        optParam_ub,
+                        cost_org,
+                        speedy=self.speedy,
+                    )
 
                     opt_res_list[i_jnt] = opt_site  # save opt results
 
                 elif "ellipsoid" in wrap_info[0]:
-                # do optimization of both sidesite and ellipsoid sizes
+                    # do optimization of both sidesite and ellipsoid sizes
 
                     # if the wrapping objects were converted from ellipsoid, then
                     # its position and rotation may need optimized to have the
                     # best MA matches
 
                     if wrap_type == "CYLINDER":  # check converted wrap type
-
                         # save the updated model
                         cvt2_model_path = self.mjc_model_path[0:-8] + "cvt2.xml"
                         with pathlib.Path(cvt2_model_path).open("w+") as xml_file:
@@ -357,18 +375,28 @@ class MomentArmOpt:
                         optParam_ub.append(size_wrap[1])
 
                         # run optimization with PSO optimizer
-                        opt_site, self.mjc_model = maOptPSO_cust(cvt2_model_path, muscle, joints,
-                                                        muscle_para["mjc_coordinate_ranges"][i_jnt],
-                                                        side_id, wrap_type_opt, wrap_id, pos_wrap,
-                                                        size_wrap, rot_wrap,
-                                                        muscle_para["osim_ma_data"][i_jnt],
-                                                        muscle_para["evalN"][i_jnt],
-                                                        optParam_lb, optParam_ub, cost_org, speedy=self.speedy)
+                        opt_site, self.mjc_model = maOptPSO_cust(
+                            cvt2_model_path,
+                            muscle,
+                            joints,
+                            muscle_para["mjc_coordinate_ranges"][i_jnt],
+                            side_id,
+                            wrap_type_opt,
+                            wrap_id,
+                            pos_wrap,
+                            size_wrap,
+                            rot_wrap,
+                            muscle_para["osim_ma_data"][i_jnt],
+                            muscle_para["evalN"][i_jnt],
+                            optParam_lb,
+                            optParam_ub,
+                            cost_org,
+                            speedy=self.speedy,
+                        )
 
                         opt_res_list[i_jnt] = opt_site  # save opt results
 
                     if wrap_type == "SPHERE":
-
                         # save the updated model
                         cvt2_model_path = self.mjc_model_path[0:-8] + "cvt2.xml"
                         with pathlib.Path(cvt2_model_path).open("w+") as xml_file:
@@ -394,13 +422,24 @@ class MomentArmOpt:
                         optParam_ub.append(pi)
 
                         # run optimization with PSO optimizer
-                        opt_site, self.mjc_model = maOptPSO_cust(cvt2_model_path, muscle, joints,
-                                                        muscle_para["mjc_coordinate_ranges"][i_jnt],
-                                                        side_id, wrap_type_opt, wrap_id, pos_wrap,
-                                                        size_wrap, rot_wrap,
-                                                        muscle_para["osim_ma_data"][i_jnt],
-                                                        muscle_para["evalN"][i_jnt],
-                                                        optParam_lb, optParam_ub, cost_org, speedy=self.speedy)
+                        opt_site, self.mjc_model = maOptPSO_cust(
+                            cvt2_model_path,
+                            muscle,
+                            joints,
+                            muscle_para["mjc_coordinate_ranges"][i_jnt],
+                            side_id,
+                            wrap_type_opt,
+                            wrap_id,
+                            pos_wrap,
+                            size_wrap,
+                            rot_wrap,
+                            muscle_para["osim_ma_data"][i_jnt],
+                            muscle_para["evalN"][i_jnt],
+                            optParam_lb,
+                            optParam_ub,
+                            cost_org,
+                            speedy=self.speedy,
+                        )
 
                         opt_res_list[i_jnt] = opt_site  # save opt results
 
@@ -429,7 +468,7 @@ class MomentArmOpt:
         ----------
         mjc_model_path: string, optional
             mujoco model path
-        
+
         Returns
         -------
         None.
@@ -473,7 +512,6 @@ class MomentArmOpt:
                 mjc_ma_data = []
 
                 for ij, joints in enumerate(muscle_para_opt["wrapping_coordinates"]):
-
                     nEval = muscle_para_opt["evalN"][ij]
                     nJnt = len(joints)
                     jntRanges_mjc = muscle_para_opt["mjc_coordinate_ranges"][ij]
@@ -483,14 +521,14 @@ class MomentArmOpt:
                     ma_mat_osim = self.maVectorSort(muscle_para_opt["osim_ma_data"][ij], nJnt, nEval)
 
                     # calculate mujoco moment arms and sort it into matrices
-                    ma_vec_mjc = computeMomentArmMuscleJoints(mjc_model, muscle, joints,
-                                                        jntRanges_mjc, nEval)
+                    ma_vec_mjc = computeMomentArmMuscleJoints(mjc_model, muscle, joints, jntRanges_mjc, nEval)
 
                     ma_mat_mjc = self.maVectorSort(ma_vec_mjc, nJnt, nEval)
 
                     # plot the moment arm plots
-                    self.individualMuscleMAPlot(muscle, joints, nJnt, jntRanges_osim, jntRanges_mjc,
-                                                ma_mat_osim, ma_mat_mjc, nEval, nEval)
+                    self.individualMuscleMAPlot(
+                        muscle, joints, nJnt, jntRanges_osim, jntRanges_mjc, ma_mat_osim, ma_mat_mjc, nEval, nEval
+                    )
 
                     mjc_ma_data.append(ma_vec_mjc)
 
@@ -540,19 +578,21 @@ class MomentArmOpt:
         """
 
         # run through each joint
-        ma_mat = np.zeros((nJnt, nEval, nEval**(nJnt - 1)))
+        ma_mat = np.zeros((nJnt, nEval, nEval ** (nJnt - 1)))
 
         for nj in range(nJnt):  # run through joints
             njVec = ma_vec[nj]
 
             for ne in range(nEval):  # run through evaulation joints
-                for ne2 in range(nEval**(nJnt - 1)):
-                    ma_mat[nj, ne, ne2] = ma_vec[ne * nEval**(nJnt - 1) + ne2][nj]
+                for ne2 in range(nEval ** (nJnt - 1)):
+                    ma_mat[nj, ne, ne2] = ma_vec[ne * nEval ** (nJnt - 1) + ne2][nj]
 
         return ma_mat
 
-    def individualMuscleMAPlot(self, muscle, joints, nJnt, joint_ranges_osim, joint_ranges_mjc, ma_mat_osim, ma_mat_mjc, nEval_osim, nEval_mjc):
-        """"
+    def individualMuscleMAPlot(
+        self, muscle, joints, nJnt, joint_ranges_osim, joint_ranges_mjc, ma_mat_osim, ma_mat_mjc, nEval_osim, nEval_mjc
+    ):
+        """ "
         Plot individual muscle moment arm curves. Osim and Mjc are plotted side by side
         for the situation that multiple joints are coupling in the plot joint moment arm.
         In this case, a number of mesh points are checked on these coupling joints. And in
@@ -565,7 +605,6 @@ class MomentArmOpt:
             supTitle = supTitle + " - " + joint
 
         for ij, joint in enumerate(joints):
-
             joint_range_osim = joint_ranges_osim[ij]
             joint_range_mjc = joint_ranges_mjc[ij]
 
@@ -582,8 +621,8 @@ class MomentArmOpt:
             max_ma = np.maximum(ma_mat_osim[ij, :, :].max(), -ma_mat_mjc[ij, :, :].min())
             min_ma = np.minimum(ma_mat_osim[ij, :, :].min(), -ma_mat_mjc[ij, :, :].max())
 
-            for c in range(nEval_osim**(nJnt - 1)):
-                line_color = tuple([c, c, nEval_mjc**(nJnt - 1)] / np.sqrt(2 * c**2 + (nEval_mjc**(nJnt - 1))**2))
+            for c in range(nEval_osim ** (nJnt - 1)):
+                line_color = tuple([c, c, nEval_mjc ** (nJnt - 1)] / np.sqrt(2 * c**2 + (nEval_mjc ** (nJnt - 1)) ** 2))
                 ax1.plot(x_osim, ma_mat_osim[ij, :, c] * 100, marker="s", color=line_color)
 
             ax1.set_ylabel("moment arms (cm)")
@@ -591,8 +630,8 @@ class MomentArmOpt:
             ax1.set_ylim([min_ma * 100, max_ma * 100])
             ax1.set_title("OSIM")
 
-            for c in range(nEval_mjc**(nJnt - 1)):
-                line_color = tuple([c, c, nEval_mjc**(nJnt - 1)] / np.sqrt(2 * c**2 + (nEval_mjc**(nJnt - 1))**2))
+            for c in range(nEval_mjc ** (nJnt - 1)):
+                line_color = tuple([c, c, nEval_mjc ** (nJnt - 1)] / np.sqrt(2 * c**2 + (nEval_mjc ** (nJnt - 1)) ** 2))
                 ax2.plot(x_mjc, -ma_mat_mjc[ij, :, c] * 100, marker="s", color=line_color)
 
             ax2.set_ylabel("moment arms (cm)")
@@ -617,8 +656,15 @@ class MomentArmOpt:
         f = plt.figure(figsize=(10, 8))
         ax1 = f.add_subplot(121)
         cmap = sns.diverging_palette(230, 20, as_cmap=True)
-        sns.heatmap(mat_1[0:len(x_list), 0:len(y_list)] * 100, cmap=cmap, vmax=maxV,
-                    center=0, square=True, linewidths=0.5, cbar_kws={"shrink": 0.5})
+        sns.heatmap(
+            mat_1[0 : len(x_list), 0 : len(y_list)] * 100,
+            cmap=cmap,
+            vmax=maxV,
+            center=0,
+            square=True,
+            linewidths=0.5,
+            cbar_kws={"shrink": 0.5},
+        )
 
         xtick = np.linspace(0, len(x_list), len(x_list), endpoint=False, dtype=int) + 0.5
         ytick = np.linspace(0, len(y_list), len(y_list), endpoint=False, dtype=int) + 0.5
@@ -633,8 +679,15 @@ class MomentArmOpt:
 
         ax2 = f.add_subplot(122)
         cmap = sns.diverging_palette(230, 20, as_cmap=True)
-        sns.heatmap(mat_2[0:len(x_list), 0:len(y_list)] * 100, cmap=cmap, vmax=maxV,
-                    center=0, square=True, linewidths=0.5, cbar_kws={"shrink": 0.5})
+        sns.heatmap(
+            mat_2[0 : len(x_list), 0 : len(y_list)] * 100,
+            cmap=cmap,
+            vmax=maxV,
+            center=0,
+            square=True,
+            linewidths=0.5,
+            cbar_kws={"shrink": 0.5},
+        )
 
         ax2.set_xticks(ytick)
         ax2.set_yticks(xtick)

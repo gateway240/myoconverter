@@ -1,1 +1,1 @@
-""" This package contains all parsers relevant to parsing the OpenSim `BodySet`. """
+"""This package contains all parsers relevant to parsing the OpenSim `BodySet`."""

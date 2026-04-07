@@ -20,7 +20,6 @@ def getJointsControlledByMuscle(osimModel, OSMuscle):
     # degIncremList = []
 
     for n_joint in range(len(muscleCrossedJointSet)):
-
         # current joint
 
         curr_joint = muscleCrossedJointSet[n_joint]
@@ -101,7 +100,7 @@ def getCouplingJoints(osimModel, osim_muscle_model, joints):
         jointRange2 = curr_joint.getRangeMax()
 
         # assume no joint can rotate more than 180 or -180.
-        jointRange1 = max(jointRange1, - np.pi)
+        jointRange1 = max(jointRange1, -np.pi)
         jointRange2 = min(jointRange2, np.pi)
 
         joints_idx.append(curr_joint)
@@ -110,7 +109,6 @@ def getCouplingJoints(osimModel, osim_muscle_model, joints):
         joint_CPset.append([joint])
 
     for it in range(len(ang_ranges)):
-
         # set minimal angle value for each joint
         for i, ia_range in enumerate(ang_ranges):
             coordToUpd = osimModel.getCoordinateSet().get(joints[i])
@@ -126,10 +124,9 @@ def getCouplingJoints(osimModel, osim_muscle_model, joints):
         ma2 = getMomentArmAtJoints(osim_muscle_model, currentState, joints_idx)
 
         for j, sg in enumerate(np.isclose(ma1, ma2, rtol=1e-4)):  # if the MA are with in 0.01%, assume no difference.
-
-        # find out the moment arm changes at all other joints by setting
-        # maximum angle of it-th joints. It means the it-th joint are coupling
-        # with them
+            # find out the moment arm changes at all other joints by setting
+            # maximum angle of it-th joints. It means the it-th joint are coupling
+            # with them
             if not sg and j != it:
                 joint_CPset[j].append(joints[it])
 
@@ -156,7 +153,7 @@ def getJointRanges_dict(osimModel, joints):
         if ("_tx" in joint) or ("_ty" in joint) or ("_tz" in joint):
             []  # if joints are translational, do not constrain
         else:
-            jointRange1 = max(jointRange1, - np.pi)
+            jointRange1 = max(jointRange1, -np.pi)
             jointRange2 = min(jointRange2, np.pi)
 
         ang_ranges[joint] = np.array([round(jointRange1, 4), round(jointRange2, 4)])
@@ -184,7 +181,7 @@ def getJointRanges_array(osimModel, joints):
         if ("_tx" in joint) or ("_ty" in joint) or ("_tz" in joint):
             []  # if joints are translational, do not constrain
         else:
-            jointRange1 = max(jointRange1, - np.pi)
+            jointRange1 = max(jointRange1, -np.pi)
             jointRange2 = min(jointRange2, np.pi)
 
     return np.array([round(jointRange1, 4), round(jointRange2, 4)])
@@ -204,7 +201,7 @@ def getAllJointsRanges(osimModel):
         jointRange2 = curr_joint.getRangeMax()
 
         # assume no joint can rotate more than 180 or -180.
-        jointRange1 = max(jointRange1, - np.pi)
+        jointRange1 = max(jointRange1, -np.pi)
         jointRange2 = min(jointRange2, np.pi)
 
         ang_ranges[curr_joint.getName()] = np.array([jointRange1, jointRange2])
@@ -248,16 +245,15 @@ def getJointsSpannedByMuscle(osimModel, OSMuscleName):
     muscleAttachIndex = []
     muscleAttach = []
     for n_point in range(musclePathPointSet.getSize()):
-
-    # get the current muscle point
+        # get the current muscle point
         currentAttachBody = musclePathPointSet.get(n_point).getBodyName()
 
-    # %Initialize
+        # %Initialize
         if n_point == 0:
             previousAttachBody = currentAttachBody
             muscleAttach.append([currentAttachBody, BodySet.getIndex(currentAttachBody)])
 
-    # building a vectors of the bodies attached to the muscles
+        # building a vectors of the bodies attached to the muscles
         if not (currentAttachBody == previousAttachBody):
             muscleAttach.append([currentAttachBody, BodySet.getIndex(currentAttachBody)])
             previousAttachBody = currentAttachBody
@@ -280,8 +276,8 @@ def getJointsSpannedByMuscle(osimModel, OSMuscleName):
     # Proximal means the body is closer to root body
 
     if muscleAttach[0][1] == -1:  # -1 means ground, the root
-         DistalBodyName = muscleAttach[-1][0]
-         ProximalBodyName = muscleAttach[0][0]
+        DistalBodyName = muscleAttach[-1][0]
+        ProximalBodyName = muscleAttach[0][0]
 
     elif muscleAttach[-1][1] == -1:  # -1 means ground, the root
         DistalBodyName = muscleAttach[0][0]
@@ -304,16 +300,15 @@ def getJointsSpannedByMuscle(osimModel, OSMuscleName):
     NoDofjointNameSet = []
     jointNameSet = []
 
-    while (bodyName != ProximalBodyName and bodyName != "ground"):
+    while bodyName != ProximalBodyName and bodyName != "ground":
         spannedJointName = getChildBodyJoint(jointStructure, bodyName)
         spannedJoint = osimModel.getJointSet().get(spannedJointName)
 
         if spannedJointName != spannedJointNameOld:
-
             # bodyName = jointStructure[spannedJointName]['parentFrame']
 
             # spannedJointNameOld = spannedJointName
-        # else:
+            # else:
             if spannedJoint.numCoordinates() != 0:
                 jointNameSet.append(spannedJointName)
             else:
@@ -354,30 +349,31 @@ def getIndipCoordAndJoint(osimModel, constraint_coord_name):
 
     # otherwise search through the constraints
     for n in range(osimModel.getConstraintSet().getSize()):
-
-    # get current constraint
+        # get current constraint
         curr_constr = osimModel.getConstraintSet().get(n)
 
-    # this function assumes that the constraint will be a coordinate
-    # coupler contraint ( Arnold's model and LLLM uses this)
-    # cast down constraint
+        # this function assumes that the constraint will be a coordinate
+        # coupler contraint ( Arnold's model and LLLM uses this)
+        # cast down constraint
         curr_constr_casted = opensim.CoordinateCouplerConstraint.safeDownCast(curr_constr)
 
-    # get dep coordinate and check if it is the coord of interest
+        # get dep coordinate and check if it is the coord of interest
         dep_coord_name = curr_constr_casted.getDependentCoordinateName()
 
         if constraint_coord_name == dep_coord_name:
-    # if curr_constr_casted.getIndependentCoordinateNames().getSize
+            # if curr_constr_casted.getIndependentCoordinateNames().getSize
             ind_coord_name_set = curr_constr_casted.getIndependentCoordinateNames()
 
-    # extract independent coordinate and independent joint to which the
-    # coordinate refers
+            # extract independent coordinate and independent joint to which the
+            # coordinate refers
             if ind_coord_name_set.getSize() == 1:
                 ind_coord_name = curr_constr_casted.getIndependentCoordinateNames().get(0)
                 ind_coord_joint_name = osimModel.getCoordinateSet().get(ind_coord_name).getJoint().getName()
-    #  return ([],[])
+            #  return ([],[])
             elif ind_coord_name_set.getSize > 1:
-                print("getIndipCoordAndJoint.m. The CoordinateCouplerConstraint has more than one indipendent coordinate and this is not managed by this function yet.")
+                print(
+                    "getIndipCoordAndJoint.m. The CoordinateCouplerConstraint has more than one indipendent coordinate and this is not managed by this function yet."
+                )
 
     return [ind_coord_name, ind_coord_joint_name]
 
@@ -401,7 +397,10 @@ def getModelJointDefinitions(osimModel):
     for j in range(numJoints):
         tempJoint = modelJointSet.get(j)
         jointStructure[tempJoint.getName()] = {}
-        jointStructure[tempJoint.getName()] = {"childFrame": tempJoint.getChildFrame().getName().replace("_offset", ""), "parentFrame": tempJoint.getParentFrame().getName().replace("_offset", "")}
+        jointStructure[tempJoint.getName()] = {
+            "childFrame": tempJoint.getChildFrame().getName().replace("_offset", ""),
+            "parentFrame": tempJoint.getParentFrame().getName().replace("_offset", ""),
+        }
     return jointStructure
 
 
@@ -429,6 +428,7 @@ def getParentBodyJoint(jointStructure, bodyName):
         if bodyName == jointStructure[joint]["parentFrame"]:
             return joint
     print("ERROR!!! NO JOINT FOUND")
+
 
 # def getParentBodyJoint(jointStructure, bodyName):
 
@@ -465,13 +465,13 @@ def getMuscleCoordinates(model, state, muscleName):
 
     # %% Iterate through coordinates, finding nonzero moment arms.
     for k in range(nCoord):
-    #  Get a reference to a coordinate.
+        #  Get a reference to a coordinate.
         aCoord = model.getCoordinateSet().get(k)
-    #  Get coordinate's max and min values.
+        #  Get coordinate's max and min values.
         rMax = aCoord.getRangeMax()
         rMin = aCoord.getRangeMin()
         rDefault = aCoord.getDefaultValue()
-    #  Define three points in the range to test the moment arm.
+        #  Define three points in the range to test the moment arm.
         totalRange = rMax - rMin
         p = np.zeros(3)
         p[0] = rMin + totalRange / 2
@@ -481,18 +481,18 @@ def getMuscleCoordinates(model, state, muscleName):
         for i in range(3):
             aCoord.setValue(state, p[i])
 
-    #   Compute the moment arm of the muscle for this coordinate.
+            #   Compute the moment arm of the muscle for this coordinate.
 
             momentArm = muscle.computeMomentArm(state, aCoord)
 
-    #   Avoid false positives due to roundoff e
+            #   Avoid false positives due to roundoff e
             tol = 1e-6
-            if (abs(momentArm) > tol):
+            if abs(momentArm) > tol:
                 muscCoord.append(k)
                 continue
                 print("Not Interrupted")
 
-    # % Set the coordinate back to its default value.
+        # % Set the coordinate back to its default value.
         aCoord.setValue(state, rDefault)
 
     # %% Initialize the structure that will be returned.
@@ -532,7 +532,7 @@ def getMuscleCoordinates(model, state, muscleName):
 def getWrappingSide(osimModel, OSMuscleName, currentState):
     """
     Calculate the position of the wrapping side
-    
+
     Parameters:
         osimModel: Opensim model
         OSMuscleName (str): muscle name
@@ -552,9 +552,11 @@ def getWrappingSide(osimModel, OSMuscleName, currentState):
     for n_ws in range(ws.getSize()):
         w = ws.get(n_ws)
         wo = ws.get(n_ws).getWrapObject()
-        wrapMuscleDic[w.get_wrap_object()] = {"center": np.array([wo.get_translation()[i] for i in range(3)]),
-                                        "dimension": wo.getDimensionsString(),
-                                        "type": wo.getWrapTypeName()}
+        wrapMuscleDic[w.get_wrap_object()] = {
+            "center": np.array([wo.get_translation()[i] for i in range(3)]),
+            "dimension": wo.getDimensionsString(),
+            "type": wo.getWrapTypeName(),
+        }
         wrapMuscleDicIntersect[w.get_wrap_object()] = []
         # Heuristic based on the assumtion that
         # 1. last muscle attachment and wrapping surface are in the same relative coordinate frame
@@ -568,9 +570,9 @@ def getWrappingSide(osimModel, OSMuscleName, currentState):
             wrapMuscleDic[w.get_wrap_object()].update({"side_pos": np.round(side, 4)})
 
     def calculateNewPos(center, pos1, pos2, mag=3):
-        """ 
-            Function to triangulate the position of the side of the wrapping
-            based on the intersaction of the muscle with the wrapping surface 
+        """
+        Function to triangulate the position of the side of the wrapping
+        based on the intersaction of the muscle with the wrapping surface
         """
         x0, y0, z0 = center
         x1, y1, z1 = pos1
@@ -595,7 +597,9 @@ def getWrappingSide(osimModel, OSMuscleName, currentState):
             if wrapMuscleDic[s_wo]["type"] == "torus":
                 wrapMuscleDic[s_wo].update({"side_pos": np.round(wrapMuscleDic[s_wo]["center"], 4)})
             else:
-                xd, yd, zd = calculateNewPos(wrapMuscleDic[s_wo]["center"], wrapMuscleDicIntersect[s_wo][0], wrapMuscleDicIntersect[s_wo][1])
+                xd, yd, zd = calculateNewPos(
+                    wrapMuscleDic[s_wo]["center"], wrapMuscleDicIntersect[s_wo][0], wrapMuscleDicIntersect[s_wo][1]
+                )
                 wrapMuscleDic[s_wo].update({"side_pos": np.round([xd, yd, zd], 4)})
             # print(s_wo, wrapMuscleDic[s_wo]['type'])
     return wrapMuscleDic
@@ -614,12 +618,10 @@ def getAllIndependentCoordinates(osimModel):
     joint_names = []
 
     for curr_coord in coordSet:
-
         curr_coord_name = curr_coord.getName()
 
         # find the independed joints if the current coordinate is contrainted
         if curr_coord.isConstrained(state) and not curr_coord.getLocked(state):
-
             constraint_coord_name = curr_coord_name
             # finding the independent coordinate
             [ind_coord_name, ind_coord_joint_name] = getIndipCoordAndJoint(osimModel, constraint_coord_name)
@@ -646,7 +648,7 @@ def getAllIndependentCoordinates(osimModel):
 
 def extractMarkerSet(osimModel_path):
     """
-        Extract marker list from Osim model for forward kinematic check
+    Extract marker list from Osim model for forward kinematic check
     """
 
     osimModel = opensim.Model(osimModel_path)
@@ -703,16 +705,15 @@ def calculateEndPoints_osim(osimModel_path, endPoints, N_EvalPoints):
     # N_EvalPoints random postures were selected to do the comparison.
 
     for n_eval in range(N_EvalPoints):
-
         # set up coordinate values
         for idof, dof in enumerate(DOF_Index):
-
             range_ind = ang_ranges[joint_names[idof]]
 
             # generate the random joint angles based the n th evaluation point
             np.random.seed(n_eval)
-            jointEval = np.array(range_ind[0]) + 0.8 * np.random.random(1) * \
-                    (np.array(range_ind[1]) - np.array(range_ind[0]))
+            jointEval = np.array(range_ind[0]) + 0.8 * np.random.random(1) * (
+                np.array(range_ind[1]) - np.array(range_ind[0])
+            )
 
             coordSet.get(dof).setValue(state, jointEval[0])
             coordSet.get(dof).setSpeedValue(state, 0)
@@ -755,7 +756,6 @@ def updOsimCoordEndPoints(osimModel, DOF_Index, jointEval, endPoints):
 
     # set up coordinate values
     for idof, dof in enumerate(DOF_Index):
-
         coordSet.get(dof).setValue(state, jointEval[idof])
         coordSet.get(dof).setSpeedValue(state, 0)
 
@@ -843,7 +843,6 @@ def updOsimCoordMomentArm(osimModel, osim_muscle_model, joints_idx, DOF_index, j
 
     # set up coordinate values
     for idof, dof in enumerate(DOF_index):
-
         coordSet.get(dof).setValue(state, jointEval[idof])
         coordSet.get(dof).setSpeedValue(state, 0)
 
@@ -989,7 +988,6 @@ def getMuscleProperties(osim_muscle):
     # t_act = Millard_muscle.get_activation_time_constant()
     # t_det = Millard_muscle.get_deactivation_time_constant()
 
-    muscle_property_dict = {"fiber_opt": fiber_opt, "tendon_sla": tendon_sla,
-                            "penna_opt": penna_opt, "fmax": fmax}
+    muscle_property_dict = {"fiber_opt": fiber_opt, "tendon_sla": tendon_sla, "penna_opt": penna_opt, "fmax": fmax}
 
     return muscle_property_dict
