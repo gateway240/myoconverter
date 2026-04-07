@@ -2,10 +2,9 @@
 
 @author: Aleksi Ikkala
 """
-from pathlib import Path
 
 import os
-from shutil import copyfile
+from pathlib import Path
 
 import numpy as np
 import pyvista
@@ -62,9 +61,9 @@ def copy_mesh_file(mesh_file, geometry_folder, output_geometry_folder):
     # Just copy the stl file
     elif mesh_file[-3:] == "stl":
         # Load the STL (trimesh handles ASCII or binary)
-        mesh = trimesh.load(Path(geometry_folder) / mesh_file, force='mesh')
+        mesh = trimesh.load(Path(geometry_folder) / mesh_file, force="mesh")
         # Export as binary STL for MuJoCo
-        mesh.export(stl_filepath, file_type='stl')  # trimesh defaults to binary
+        mesh.export(stl_filepath, file_type="stl")  # trimesh defaults to binary
 
     else:
         logger.critical("Geom file is not vtp or stl!")

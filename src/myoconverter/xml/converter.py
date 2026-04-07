@@ -16,7 +16,7 @@ Example:
     convert(xml_file, output_folder, **kwargs)
 
 """
-import logging
+
 
 import argparse
 
@@ -108,8 +108,8 @@ def _add_bodies_and_joints(parent_name, current_body, root_body=False):
         socket_child_frame = frames.find(f".//*[@name='{joint.find('socket_child_frame').text}']")
 
         # Ignore child socket frames
-        print(joint.tag,joint.attrib.get('name', 'No Name'))
-        print(socket_child_frame.tag,socket_child_frame.attrib.get('name', 'No Name'))
+        print(joint.tag, joint.attrib.get("name", "No Name"))
+        print(socket_child_frame.tag, socket_child_frame.attrib.get("name", "No Name"))
         if socket_child_frame.find("socket_parent").text == parent_name:
             continue
 
