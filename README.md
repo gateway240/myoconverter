@@ -45,30 +45,18 @@ mujoco.mj_resetDataKeyframe(model, data, 0)
 
 ## Download & Setup
 
-We recommend installing MyoConverter via conda / mamba if you're running Linux (tested on Ubuntu 20.04 & 22.04). In earlier development phases we encountered issues in Windows. Hence, for Windows / MacOS users, we provide a docker image (follow [this link](./docker/README.md) for more instructions), which contains the tested Linux setup. If you try the conda / mamba approach on Windows / MacOS, please let us know how it goes!
-
-### conda / mamba
 
 - Clone the repo
 ```bash
 git clone git@github.com:MyoHub/myoconverter.git; cd myoconverter
 ```
-
-- Create a conda environment with the `conda_env.yml` file
+See [build instructions](https://gateway240.com/blog/building-opensim/) for reference.
 ```bash
-conda env create -n myoconverter -f conda_env.yml
-conda activate myoconverter
-```
+uv init --python 3.11
+uv venv
+uv pip install swig
+source .venv/bin/activate
 
-**Note** conda is very slow in solving the dependencies and installing the environment (>15 minutes). We recommend installation via [mamba](https://mamba.readthedocs.io/en/latest/installation.html) instead, which installs the environment in a couple of minutes. With mamba, the environment is created by replacing `conda` with `mamba`:
-```bash
-mamba env create -n myoconverter -f conda_env.yml
-mamba activate myoconverter
-```
-
-- Add MyoConverter project folder to PYTHONPATH
-```bash
-export PYTHONPATH=${PYTHONPATH}:/path/to/myoconverter
 ```
 
 - Optional: Test installation by running a model unit test
