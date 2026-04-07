@@ -2,6 +2,7 @@
 
 @author: Aleksi Ikkala
 """
+from pathlib import Path
 
 import os
 from shutil import copyfile
@@ -43,10 +44,10 @@ def copy_mesh_file(mesh_file, geometry_folder, output_geometry_folder):
     # Transform a vtk file into an stl file and repair the mesh
     if mesh_file[-3:] == "vtp":
         # Read the vtp file with pyvista
-        pymesh = pyvista.read(os.path.join(geometry_folder, mesh_file))
+        pymesh = pyvista.read(Path(geometry_folder) / mesh_file)
 
         # Convert into trimesh (see https://github.com/pyvista/pyvista/discussions/2268)
-        pymesh = pymesh.extract_surface().triangulate()
+        pymesh = pymesh.extract_surface(algorithm="dataset_surface").triangulate()
         faces_as_array = pymesh.faces.reshape((pymesh.n_cells, 4))[:, 1:]
         tmesh = trimesh.Trimesh(pymesh.points, faces_as_array)
 
@@ -60,7 +61,10 @@ def copy_mesh_file(mesh_file, geometry_folder, output_geometry_folder):
 
     # Just copy the stl file
     elif mesh_file[-3:] == "stl":
-        copyfile(os.path.join(geometry_folder, mesh_file), stl_filepath)
+        # Load the STL (trimesh handles ASCII or binary)
+        mesh = trimesh.load(Path(geometry_folder) / mesh_file, force='mesh')
+        # Export as binary STL for MuJoCo
+        mesh.export(stl_filepath, file_type='stl')  # trimesh defaults to binary
 
     else:
         logger.critical("Geom file is not vtp or stl!")
