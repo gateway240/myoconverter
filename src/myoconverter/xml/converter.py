@@ -18,11 +18,12 @@ Example:
 """
 
 import argparse
+
 from loguru import logger
 from lxml import etree
 
 from myoconverter.xml import config as cfg
-from myoconverter.xml.utils import find_element_by_name, split_name, create_keyframe
+from myoconverter.xml.utils import create_keyframe, find_element_by_name, split_name
 
 
 def convert(xml_file, output_folder, **kwargs):
@@ -37,7 +38,7 @@ def convert(xml_file, output_folder, **kwargs):
   # First, initialise config (read and parse OpenSim and MuJoCo XML files, set variables etc.)
   cfg.initialise(xml_file, output_folder, **kwargs)
 
-  logger.info(f"Commencing the conversion procedure!")
+  logger.info("Commencing the conversion procedure!")
 
   # Parse ground. The ground may have attached geometries and wrapping objects
   _parse_ground()
@@ -70,6 +71,7 @@ def convert(xml_file, output_folder, **kwargs):
   # Return path to converted file
   return cfg.OUTPUT_XML_FILE
 
+
 def _parse_bodies_and_joints():
   """ Parse OpenSim `BodySet` and `JointSet`.
 
@@ -79,6 +81,7 @@ def _parse_bodies_and_joints():
   # Start from ground and go through joints recursively (depth-first), and add bodies, geoms, joints to MuJoCo model
   logger.info("Starting to parse bodies, wrapping objects, and joints")
   _add_bodies_and_joints(f"/{cfg.O_GROUND.attrib['name']}", cfg.M_WORLDBODY, root_body=True)
+
 
 def _add_bodies_and_joints(parent_name, current_body, root_body=False):
   """ Add OpenSim `Body` and related `Joint`s to MuJoCo model in a recurrent fashion.
@@ -126,8 +129,9 @@ def _add_bodies_and_joints(parent_name, current_body, root_body=False):
                            root_body=root_body)
 
     # Move to next joint
-    parent_name = socket_child_frame.find('socket_parent').text
+    parent_name = socket_child_frame.find("socket_parent").text
     _add_bodies_and_joints(parent_name, next_body)
+
 
 def _parse_ground():
   """ Parse OpenSim `Ground`.
@@ -138,6 +142,7 @@ def _parse_ground():
   logger.info("Parsing the ground")
   cfg.BODY_PARSER.parse(cfg.O_GROUND, add_ground_geom=cfg.ADD_GROUND_GEOM)
 
+
 def _parse_constraints():
   """ Parse OpenSim `ConstraintSet`.
 
@@ -146,6 +151,7 @@ def _parse_constraints():
 
   logger.info("Starting to parse constraints")
   cfg.CONSTRAINT_PARSER.parse_all(cfg.O_CONSTRAINTSET)
+
 
 def _parse_forces():
   """ Parse OpenSim `ForceSet`.
@@ -156,6 +162,7 @@ def _parse_forces():
   logger.info("Starting to parse forces, including path points and wrap paths")
   cfg.FORCE_PARSER.parse_all(cfg.O_FORCESET)
 
+
 def _parse_markers():
   """ Parse OpenSim `MarkerSet`.
 
@@ -164,6 +171,7 @@ def _parse_markers():
 
   logger.info("Starting to parse markers")
   cfg.MARKER_PARSER.parse_all(cfg.O_MARKERSET)
+
 
 def _set_keyframe():
   """ Create a keyframe for the MuJoCo model.
@@ -175,6 +183,7 @@ def _set_keyframe():
 
   logger.info("Setting the default keyframe")
   create_keyframe(cfg.MUJOCO, cfg.M_WORLDBODY, cfg.M_EQUALITY)
+
 
 def _copy_credits():
   """ Copy credits from the OpenSim model.
@@ -194,20 +203,21 @@ def _copy_credits():
   comment = etree.Comment(" This model has been converted from an OpenSim model. Model conversion by MyoConverter https://github.com/MyoHub/myoconverter. This model is licensed under Apache 2.0. ")
   cfg.MUJOCO.insert(0, comment)
 
+
 if __name__ == "__main__":
 
-  argparser = argparse.ArgumentParser(description='Convert an OpenSim model into a MuJoCo model.'
-                                                    'Only Works with OpenSim v4 models.')
+  argparser = argparse.ArgumentParser(description="Convert an OpenSim model into a MuJoCo model."
+                                                    "Only Works with OpenSim v4 models.")
   """ ArgumentParser: Parse arguments when running module as a Python script. """
-  argparser.add_argument('xml_file', type=str,
-                         help='Path to an OpenSim model XML file')
-  argparser.add_argument('output_folder', type=str,
+  argparser.add_argument("xml_file", type=str,
+                         help="Path to an OpenSim model XML file")
+  argparser.add_argument("output_folder", type=str,
                          help="Path to an output folder. The converted model will be saved here.")
-  argparser.add_argument('--geometry_folder', type=str, default=None,
-                         help='Path to the Geometry folder (by default uses folder of given OpenSim file)')
-  argparser.add_argument('--add_ground_geom', default=False, action="store_true",
+  argparser.add_argument("--geometry_folder", type=str, default=None,
+                         help="Path to the Geometry folder (by default uses folder of given OpenSim file)")
+  argparser.add_argument("--add_ground_geom", default=False, action="store_true",
                          help="If true, a geom (of type plane) is added to the MuJoCo model as ground")
-  argparser.add_argument('--treat_as_normal_path_point', default=False, action="store_true",
+  argparser.add_argument("--treat_as_normal_path_point", default=False, action="store_true",
                          help="If true, MovingPathPoints and ConditionalPathPoints will be treated as normal "
                               "PathPoints")
   args = argparser.parse_args()

@@ -3,16 +3,15 @@
 @author: Aleksi Ikkala
 """
 
-import numpy as np
-from scipy.interpolate import interp1d
-from scipy.interpolate import UnivariateSpline
-import matplotlib
-import matplotlib.pyplot as pp
 import os
 
+import matplotlib
+import matplotlib.pyplot as pp
+import numpy as np
 from loguru import logger
+from scipy.interpolate import UnivariateSpline, interp1d
 
-from myoconverter.xml.utils import str2vec, fit_spline
+from myoconverter.xml.utils import fit_spline, str2vec
 
 matplotlib.use("agg")
 pp.ioff()
@@ -69,6 +68,7 @@ def update_moving_path_point_location(coordinate_name, path_point):
   # Return the median of fit inside given range
   x = np.linspace(x_values[0], x_values[-1], 1000)
   return np.median(mdl(x))
+
 
 def get_moving_path_point_dependency(path_point, coordinate_name, socket_name, cfg, output_dir):
   """ Get a MovingPathPoint's dependency on an independent coordinate.
@@ -145,8 +145,8 @@ def plot_figure(x_values, y_values, fit, independent_joint, path_point_name, coo
   y_approx = fit(x_approx)
 
   # Plot the OpenSim data points and approximation
-  pp.plot(x_values, y_values, '.', markersize=10, label=f"OpenSim movement function data points")
-  pp.plot(x_approx, y_approx, label=f"Approximation of the movement function")
+  pp.plot(x_values, y_values, ".", markersize=10, label="OpenSim movement function data points")
+  pp.plot(x_approx, y_approx, label="Approximation of the movement function")
   pp.legend()
   pp.xlabel(f"Independent joint value ({independent_joint})")
   pp.ylabel(f"Dependent joint value ({path_point_name}_{coord})")

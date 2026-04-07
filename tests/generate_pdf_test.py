@@ -4,10 +4,10 @@
 
 from myoconverter.utils.generate_pdf import generate_pdf
 
-cvt1_path = './tests/resource/generate_pdf_test/Step1_xmlConvert'
-cvt2_path = './tests/resource/generate_pdf_test/Step2_muscleKinematics'
-cvt3_path = './tests/resource/generate_pdf_test/Step3_muscleKinetics'
-model_name = 'test'
-saving_path = './tests/resource/generate_pdf_test/'
+cvt1_path = "./tests/resource/generate_pdf_test/Step1_xmlConvert"
+cvt2_path = "./tests/resource/generate_pdf_test/Step2_muscleKinematics"
+cvt3_path = "./tests/resource/generate_pdf_test/Step3_muscleKinetics"
+model_name = "test"
+saving_path = "./tests/resource/generate_pdf_test/"
 
 generate_pdf(cvt1_path, cvt2_path, cvt3_path, model_name, saving_path)

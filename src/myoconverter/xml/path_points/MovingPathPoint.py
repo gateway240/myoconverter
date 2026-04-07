@@ -3,18 +3,18 @@
 @author: Aleksi Ikkala
 """
 
-import numpy as np
-from lxml import etree
 import os
+import pathlib
 
+import numpy as np
 from loguru import logger
+from lxml import etree
 
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import vec2str
-from myoconverter.xml.path_points.utils import get_moving_path_point_dependency
-from myoconverter.xml.utils import get_body
-from myoconverter.xml.path_points.PathPoint import PathPoint
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.path_points.PathPoint import PathPoint
+from myoconverter.xml.path_points.utils import get_moving_path_point_dependency
+from myoconverter.xml.utils import get_body, vec2str
 
 
 class MovingPathPoint(IParser):
@@ -37,8 +37,8 @@ class MovingPathPoint(IParser):
     # Create an output dir for plots (if 1. this is an actual MovingPathPoint and not a ConditionalPathPoint
     # modelled as one, 2. MovingPathPoints are not treated as normal PathPoints, and 3. the output dir doesn't exist)
     output_dir = os.path.join(cfg.OUTPUT_PLOT_FOLDER, "moving_path_points")
-    if dependencies is None and not cfg.TREAT_AS_NORMAL_PATH_POINT and not os.path.isdir(output_dir):
-      os.makedirs(output_dir)
+    if dependencies is None and not cfg.TREAT_AS_NORMAL_PATH_POINT and not pathlib.Path(output_dir).is_dir():
+      pathlib.Path(output_dir).mkdir(parents=True)
 
     # Get path point dependencies
     if dependencies is None:
@@ -136,5 +136,4 @@ class MovingPathPoint(IParser):
     """
     if np.abs(vec[1] - vec[0]) < 0.001:
       return True
-    else:
-      return False
+    return False

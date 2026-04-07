@@ -5,10 +5,10 @@
 
 import numpy as np
 
-from myoconverter.xml.parsers import IParser
 from myoconverter.xml import config as cfg
-from myoconverter.xml.utils import calculate_mujoco_position, str2vec
+from myoconverter.xml.parsers import IParser
 from myoconverter.xml.path_wraps.utils import add_wrapping_site, maybe_add_wrapping_site
+from myoconverter.xml.utils import calculate_mujoco_position, str2vec
 from myoconverter.xml.wrap_objects.utils import mujoco_wrap_object_name
 
 
@@ -49,7 +49,7 @@ class PathWrap(IParser):
     sites = tendon.findall("site")
 
     # Get muscle name
-    muscle_name = xml.getparent().getparent().getparent().getparent().attrib['name']
+    muscle_name = xml.getparent().getparent().getparent().getparent().attrib["name"]
 
     # Check range
     if xml.find("range") is not None:
@@ -81,7 +81,7 @@ class PathWrap(IParser):
       for idx in range(1, len(sites)):
         p, issue_warning = maybe_add_wrapping_site(idx, sites, muscle_name, wrap_object_name,
                                                    wrap_object_pos, wrap_object_radius, wrap_object_body,
-                                                   wrap_object_body_pos, params.get(idx-1, None), cfg.M_WORLDBODY)
+                                                   wrap_object_body_pos, params.get(idx - 1, None), cfg.M_WORLDBODY)
 
         if p is not None:
           params[idx] = p

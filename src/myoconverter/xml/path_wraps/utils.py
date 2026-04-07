@@ -27,7 +27,7 @@ def add_wrapping_site(idx, sites, muscle_name, wrap_object_name, wrap_object_pos
   """
 
   # Get relevant sites
-  s1 = sites[idx-1]
+  s1 = sites[idx - 1]
   s2 = sites[idx]
 
   # Check if we need to create a new sidesite
@@ -70,6 +70,7 @@ def add_wrapping_site(idx, sites, muscle_name, wrap_object_name, wrap_object_pos
   return {"sidesite": sidesite, "wrap_object": wrap_object_name, "wrap_object_body": wrap_object_body,
           "predefined": True}
 
+
 def maybe_add_wrapping_site(idx, sites, muscle_name, wrap_object_name, wrap_object_pos, wrap_object_radius,
                             wrap_object_body, wrap_object_body_pos, params, M_WORLDBODY):
   """ Maybe add a wrapping site to given index.
@@ -91,7 +92,7 @@ def maybe_add_wrapping_site(idx, sites, muscle_name, wrap_object_name, wrap_obje
   """
 
   # Get relevant sites
-  s1 = sites[idx-1]
+  s1 = sites[idx - 1]
   s2 = sites[idx]
 
   # Check if one of the sites is a conditional / moving site
@@ -152,8 +153,8 @@ def maybe_add_wrapping_site(idx, sites, muscle_name, wrap_object_name, wrap_obje
     return {"sidesite": sidesite, "wrap_object": wrap_object_name, "wrap_object_body": wrap_object_body,
             "predefined": False, "dist": closest_dist}, False
 
-  else:
-    return None, False
+  return None, False
+
 
 def segment_distance_to_wrapping_object(s1, s2, wrap_object_pos, M_WORLDBODY):
   """ Calculate distance between a given segment (straight line between two sites) and a wrapping object.
@@ -180,6 +181,7 @@ def segment_distance_to_wrapping_object(s1, s2, wrap_object_pos, M_WORLDBODY):
   distances = np.linalg.norm(points - wrap_object_pos, axis=1)
 
   return distances, points
+
 
 def create_sidesite_name(tendon_name, wrap_object_name, idx):
   """ Utility function to create a name for a {tendon, wrapping object} pair

@@ -3,17 +3,16 @@
 @author: Aleksi Ikkala
 """
 
-import numpy as np
-from typing import final
 from abc import abstractmethod
+from typing import final
+
+import numpy as np
+from loguru import logger
 from lxml import etree
 
-from loguru import logger
-
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import str2bool, element_txt2num, val2str, filter_nan_values, str2vec
-from myoconverter.xml.forces.utils import calculate_length_range
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.utils import element_txt2num, filter_nan_values, str2bool, str2vec, val2str
 
 
 class Muscle(IParser):
@@ -30,7 +29,6 @@ class Muscle(IParser):
 
     #: dict: Dictionary for parameters. Initialised child objects can overwrite these parameters
     self._params = dict()
-
 
   @abstractmethod
   def _parse(self, xml, **kwargs):
@@ -67,7 +65,7 @@ class Muscle(IParser):
 
     # Use a larger scale ratio than literature suggests, e.g. Garner and Pandy (2002) uses [0.5, 1.5]
     # (https://web.ecs.baylor.edu/faculty/garner/Research/GarnerPandy2003ParamEst.pdf)
-    #self._params["range"] = np.array([0.5, 2])
+    # self._params["range"] = np.array([0.5, 2])
 
     # Get optimal fiber length, tendon slack length, and pennation angle
     optimal_fiber_length = element_txt2num(xml, "optimal_fiber_length")
@@ -75,7 +73,7 @@ class Muscle(IParser):
     pennation_angle = element_txt2num(xml, "pennation_angle_at_optimal")
 
     # Try to optimize length range
-    #self._params["lengthrange"] = calculate_length_range(self._params["range"], optimal_fiber_length,
+    # self._params["lengthrange"] = calculate_length_range(self._params["range"], optimal_fiber_length,
     #                                                     tendon_slack_length, pennation_angle)
     # Use an arbitrary value for length range
     self._params["lengthrange"] = np.array([0.01, 1])

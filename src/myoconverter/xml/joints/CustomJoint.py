@@ -3,17 +3,18 @@
 @author: Aleksi Ikkala
 """
 
-from copy import deepcopy
-import numpy as np
-from lxml import etree
 import os
+import pathlib
+from copy import deepcopy
 
+import numpy as np
 from loguru import logger
+from lxml import etree
 
-from myoconverter.xml.joints.Joint import Joint
-from myoconverter.xml.joints.utils import parse_coordinates, estimate_axis, plot_and_save_figure
-from myoconverter.xml.utils import str2bool, str2vec, val2str, vec2str, filter_keys, fit_spline, is_linear
 from myoconverter.xml import config as cfg
+from myoconverter.xml.joints.Joint import Joint
+from myoconverter.xml.joints.utils import estimate_axis, parse_coordinates, plot_and_save_figure
+from myoconverter.xml.utils import filter_keys, fit_spline, is_linear, str2bool, str2vec, val2str, vec2str
 
 
 class CustomJoint(Joint):
@@ -92,9 +93,9 @@ class CustomJoint(Joint):
       params["axis"] = estimate_axis(socket_child_frame, axis)
 
       # Figure out whether this is rotation or translation
-      if params["_transform_type"] == 'rotation':
+      if params["_transform_type"] == "rotation":
         params["type"] = "hinge"
-      elif params["_transform_type"] == 'translation':
+      elif params["_transform_type"] == "translation":
         params["type"] = "slide"
       else:
         logger.critical(f"Unidentified transformation type {params['_transform_type']} for transformation "
@@ -109,7 +110,7 @@ class CustomJoint(Joint):
 
       # See the comment before this loop. We have to designate one DoF per Coordinate as an independent variable,
       # i.e. make its dependence linear
-      if coordinate is not None and coordinate.text is not None and not coordinate.text in dof_designated:
+      if coordinate is not None and coordinate.text is not None and coordinate.text not in dof_designated:
         if self._designate_dof(t, params, coordinate):
           dof_designated.append(coordinate.text)
 
@@ -119,7 +120,7 @@ class CustomJoint(Joint):
       if t.find("Constant") is not None:
 
         # Get the value
-        value = scale*float(t.find("Constant/value").text)
+        value = scale * float(t.find("Constant/value").text)
 
         # If the value is near zero don't bother creating this joint
         if abs(value) < 1e-6:
@@ -150,7 +151,7 @@ class CustomJoint(Joint):
 
         # Convert into numpy arrays; apply scaling to y values
         x_values = str2vec(x_values.text)
-        y_values = scale*str2vec(y_values.text)
+        y_values = scale * str2vec(y_values.text)
 
         fit, polycoef, joint_range = fit_spline(x_values, y_values)
 
@@ -159,8 +160,8 @@ class CustomJoint(Joint):
 
         # Create an output dir for plots (if it doesn't exist)
         output_dir = os.path.join(cfg.OUTPUT_PLOT_FOLDER, "custom_joints")
-        if not os.path.isdir(output_dir):
-          os.makedirs(output_dir)
+        if not pathlib.Path(output_dir).is_dir():
+          pathlib.Path(output_dir).mkdir(parents=True)
         plot_and_save_figure(x_values, y_values, fit, params, independent_coordinate, output_dir)
 
         # Set range
@@ -184,7 +185,7 @@ class CustomJoint(Joint):
                           f"not been implemented")
           raise NotImplementedError
 
-        elif len(coordinate_mapping) == 1:
+        if len(coordinate_mapping) == 1:
 
           # This coordinate depends on another coordinate
           constraint = coordinate_mapping[0].getparent()
@@ -224,7 +225,7 @@ class CustomJoint(Joint):
 
         # I'm not sure how to handle a LinearFunction with coefficients != [1, 0] (the first one is slope,
         # second intercept), except for [-1, 0] when we can just flip the axis
-        coefficients = scale*str2vec(t.find("LinearFunction/coefficients").text)
+        coefficients = scale * str2vec(t.find("LinearFunction/coefficients").text)
         if abs(coefficients[0]) != 1 or coefficients[1] != 0:
           logger.critical(f"How do we handle this linear function: {xml.attrib['name']}/{t.attrib['name']}?")
           raise RuntimeError

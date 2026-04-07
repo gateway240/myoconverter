@@ -1,30 +1,40 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Sun Feb 20 21:43:21 2022
 
 @author: hwang
 """
 
-from myoconverter.optimization.utils.UtilsOpensim import getJointsControlledByMuscle, getCouplingJoints,\
-        getAllIndependentCoordinates, getJointRanges_dict, getJointRanges_array, computeMomentArm,\
-        getMuscleLengthList, getMuscleForceMaps, getMuscleProperties
-from loguru import logger
+import pathlib
 import pickle
-        
+
+from loguru import logger
+
+from myoconverter.optimization.utils.UtilsOpensim import (
+    computeMomentArm,
+    getAllIndependentCoordinates,
+    getCouplingJoints,
+    getJointRanges_array,
+    getJointRanges_dict,
+    getJointsControlledByMuscle,
+    getMuscleForceMaps,
+    getMuscleLengthList,
+    getMuscleProperties,
+)
+
 
 class OsimMuscleStates:
     """ A class to extract the muscle states (moment arms and force properites)
         of the given OpenSim model
      """
-             
-    def __init__(self, osim_model, muscle_list = None):
+
+    def __init__(self, osim_model, muscle_list=None):
         """
         osim_model: loaded opensim model
         muscle_list: specified muscles whose states will be extracted. if None,
                      then all muscles inside the OsimModel will be calculated.
         """
-        
+
         # initilize the input osim model as the global variables
         self.osim_model = osim_model
         if type(muscle_list) != list:
@@ -35,13 +45,12 @@ class OsimMuscleStates:
         # dictionary for storing calculated moment arms and force properties
         self.moment_arms = dict()
         self.force_properties = dict()
-        
+
     def reset(self):
         # reset all calculated variables
         self.moment_arms = dict()
         self.force_properties = dict()
-        
-        
+
     # get the wrapping coordinate of the given muscle list
     def getWrapingCoords(self):
         """
@@ -60,25 +69,25 @@ class OsimMuscleStates:
                       
             ...     
             
-        """       
+        """
 
-        logger.info("Extract the joints that muscle wrapped over from Osim model") 
-        
+        logger.info("Extract the joints that muscle wrapped over from Osim model")
+
         self.wrapping_coordinate = {}
 
         osim_muscles = self.osim_model.getMuscles()  # osim muscle class
-            
+
         # go through a for loop of each muscle to extract the wrapped coordinates
         for i_muscle in self.muscle_list:
-            
+
             # get wrapping coordiantes
             joints = getJointsControlledByMuscle(self.osim_model, osim_muscles.get(i_muscle))
-            
+
             jointCP = getCouplingJoints(self.osim_model, osim_muscles.get(i_muscle), joints)
-            
+
             # remove the duplicated coupling joints combinations
-            wrap_list = [list(i) for i in {*[tuple(sorted(i)) for i in jointCP]}];
-            
+            wrap_list = [list(i) for i in {*[tuple(sorted(i)) for i in jointCP]}]
+
             # remove the sub coupling joints and only save the largest one.
             # Also make sure they always have the same order in every calculations.
             # A dirty fix right now, must have better ways to do this....
@@ -88,19 +97,18 @@ class OsimMuscleStates:
                 while j_wrap < len(wrap_list):
                     if i_wrap == j_wrap:
                         j_wrap = j_wrap + 1
+                    elif all(elem in wrap_list[j_wrap] for elem in wrap_list[i_wrap]):
+                        del wrap_list[i_wrap]
+                        break
                     else:
-                        if all(elem in wrap_list[j_wrap] for elem in wrap_list[i_wrap]):
-                            del wrap_list[i_wrap]
-                            break
-                        else:
-                            j_wrap = j_wrap + 1
+                        j_wrap = j_wrap + 1
                 else:
                     i_wrap = i_wrap + 1
-                    
+
             self.wrapping_coordinate[i_muscle] = wrap_list
-            
+
         return self.wrapping_coordinate
-    
+
     # getting all coordinate ranges that wrapped by muscles
     def getCoordRanges(self):
         """
@@ -119,15 +127,14 @@ class OsimMuscleStates:
         """
 
         logger.info("Extract joint motion range from Osim model")
-        
+
         joint_names, DOF_Index = getAllIndependentCoordinates(self.osim_model)
-        
+
         self.coordinate_range = getJointRanges_dict(self.osim_model, joint_names)
-                    
+
         return self.coordinate_range
 
-            
-    def getMomentArms(self, save_path, speedy = False):
+    def getMomentArms(self, save_path, speedy=False):
         """
         calcualte moment arms of a muscle at different coordinates it wrapped.
 
@@ -156,23 +163,23 @@ class OsimMuscleStates:
             The dictionary that contains the moment arms that were
             calculated from the opensim model with the given inputs
         """
-        
+
         self.getWrapingCoords()  # generate wrapping coordiantes
         #  self.getCoordRanges()  # extract joint ranges
 
         logger.info("Calculate moment arms from Osim model")
-            
-        # self.moment_arms = {}  don't not export all the moment arm in one file anymore 
+
+        # self.moment_arms = {}  don't not export all the moment arm in one file anymore
         for muscle in self.wrapping_coordinate.keys():   # run through all muscles
 
             logger.info(f"Muscle: {muscle}")
-        
-            osim_muscle  = self.osim_model.getMuscles().get(muscle)
+
+            osim_muscle = self.osim_model.getMuscles().get(muscle)
 
             mus_para = {}
-            mus_para['muscle_name'] = muscle
+            mus_para["muscle_name"] = muscle
             muscle_moment_arms = []
-            mus_para['wrapping_coordinates'] = self.wrapping_coordinate[muscle]
+            mus_para["wrapping_coordinates"] = self.wrapping_coordinate[muscle]
 
             motion_ranges = []
             moment_arms_joints = []
@@ -181,8 +188,8 @@ class OsimMuscleStates:
             for joints in self.wrapping_coordinate[muscle]:  # run through all joints
 
                 if speedy:  # speedy optimization with lower number of evaluation nodes
-                
-                    # setup the maximum mesh points depends on the number of 
+
+                    # setup the maximum mesh points depends on the number of
                     # joint coupling together, otherwise it will take too long to
                     # compute them!
                     if len(joints) == 1:
@@ -195,54 +202,53 @@ class OsimMuscleStates:
                         evalN = 3
                     else:
                         evalN = 2
-                
+
+                # setup the maximum mesh points depends on the number of
+                # joint coupling together, otherwise it will take too long to
+                # compute them!
+                elif len(joints) == 1:
+                    evalN = 25
+                elif len(joints) == 2:
+                    evalN = 11
+                elif len(joints) == 3:
+                    evalN = 7
+                elif len(joints) == 4:
+                    evalN = 5
+                elif len(joints) == 5:
+                    evalN = 4
                 else:
-                    # setup the maximum mesh points depends on the number of 
-                    # joint coupling together, otherwise it will take too long to
-                    # compute them!
-                    if len(joints) == 1:
-                        evalN = 25
-                    elif len(joints) == 2:
-                        evalN = 11
-                    elif len(joints) == 3:
-                        evalN = 7
-                    elif len(joints) == 4:
-                        evalN = 5
-                    elif len(joints) == 5:
-                        evalN = 4
-                    else:
-                        evalN = 3
-            
+                    evalN = 3
+
                 motion_range = []
                 for joint in joints:  # extract the motion range
                     motion_range.append(getJointRanges_array(self.osim_model, joint))
-                
+
                 # calculate moment arms for this muscle and joints
                 # and save it to a list
-                moment_arms_joints.append(computeMomentArm(self.osim_model,\
-                                                 osim_muscle, joints, motion_range,\
+                moment_arms_joints.append(computeMomentArm(self.osim_model,
+                                                 osim_muscle, joints, motion_range,
                                                  evalN))
 
                 motion_ranges.append(motion_range)
                 evalN_list.append(evalN)
 
             # save joint motion ranges and moment arm lists
-            mus_para['osim_coordinate_ranges'] = motion_ranges
-            mus_para['osim_ma_data'] = moment_arms_joints
-            mus_para['evalN'] = evalN_list
+            mus_para["osim_coordinate_ranges"] = motion_ranges
+            mus_para["osim_ma_data"] = moment_arms_joints
+            mus_para["evalN"] = evalN_list
 
             # save moment arm data if a saving path is provided
             if save_path:
-                with open(save_path + '/' + muscle + '.pkl', 'wb') as muscle_file:
+                with pathlib.Path(save_path + "/" + muscle + ".pkl").open("wb") as muscle_file:
                     pickle.dump(mus_para, muscle_file)
 
             # save the moment arms of the muscle into a dictionary, NO LONGER NEEDED
             # self.moment_arms[muscle]= muscle_moment_arms
-            
+
         # return self.moment_arms
-    
-    def getMuscleForceMaps(self, save_path, speedy = False):
-    
+
+    def getMuscleForceMaps(self, save_path, speedy=False):
+
         """get the muscle force maps from OpenSim models. 
         
         Parameters
@@ -265,55 +271,54 @@ class OsimMuscleStates:
         self.getWrapingCoords()
 
         logger.info("Calculate muscle force curves from Osim model")
-            
+
         # force_maps = {}
         for muscle in self.wrapping_coordinate.keys():   # run through each muscle
 
             logger.info(f"Muscle: {muscle}")
-        
-            osim_muscle  = self.osim_model.getMuscles().get(muscle)
-            
+
+            osim_muscle = self.osim_model.getMuscles().get(muscle)
+
             # get a list of muscle lengths from minimal to maximum and the corresponding
             # joint angle list
             force_map = {}
-            
+
             # extract the property parameters from the OpenSim models
-            force_map['mtu_par_set'] = getMuscleProperties(osim_muscle)
-            
+            force_map["mtu_par_set"] = getMuscleProperties(osim_muscle)
+
             motion_range = []
             joints_uniq = []
-            for joints in self.wrapping_coordinate[muscle]:  # run through all joints           
+            for joints in self.wrapping_coordinate[muscle]:  # run through all joints
                 for joint in joints:  # extract the motion range
                     if joint not in joints_uniq:  # only go through the unique joint coordinates
                         joints_uniq.append(joint)
                         motion_range.append(getJointRanges_array(self.osim_model, joint))
-        
-            mtu_len_set, jit_list_set = getMuscleLengthList(self.osim_model,\
-                                                            osim_muscle, joints_uniq,\
+
+            mtu_len_set, jit_list_set = getMuscleLengthList(self.osim_model,
+                                                            osim_muscle, joints_uniq,
                                                             motion_range, speedy)
-            
-            force_map['muscle_name'] = muscle
-            force_map['mtu_length_osim'] = mtu_len_set
-            force_map['jit_list_set'] = jit_list_set
-            force_map['jit_uniq'] = joints_uniq
-            force_map['jit_uniq_ranges'] = motion_range
-                
+
+            force_map["muscle_name"] = muscle
+            force_map["mtu_length_osim"] = mtu_len_set
+            force_map["jit_list_set"] = jit_list_set
+            force_map["jit_uniq"] = joints_uniq
+            force_map["jit_uniq_ranges"] = motion_range
+
             # set the muscle activation shift from 0 to 1
             # only optimize when activation equal to 1
-            act_list = [1] # np.linspace(0, 1, 5)
-            force_map['act_list'] = act_list
-                
+            act_list = [1]  # np.linspace(0, 1, 5)
+            force_map["act_list"] = act_list
+
             # get muscle tendon force,  and active/passive forces
             mtu_force_length, act_force_length, pas_force_length = \
                 getMuscleForceMaps(self.osim_model, osim_muscle, joints_uniq, jit_list_set, act_list)
-                
-            force_map['mtu_force_osim'] = mtu_force_length
-            force_map['act_force_osim'] = act_force_length
-            force_map['pas_force_osim'] = pas_force_length
-                
+
+            force_map["mtu_force_osim"] = mtu_force_length
+            force_map["act_force_osim"] = act_force_length
+            force_map["pas_force_osim"] = pas_force_length
+
             if save_path:
-                with open(save_path + '/' + muscle + '.pkl', 'wb') as muscle_mf_file:
+                with pathlib.Path(save_path + "/" + muscle + ".pkl").open("wb") as muscle_mf_file:
                     pickle.dump(force_map, muscle_mf_file)
-        
+
         # return force_maps
-    

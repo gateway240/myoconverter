@@ -3,9 +3,9 @@
 @author: Aleksi Ikkala
 """
 
-from myoconverter.xml.parsers import IParser
-
 from loguru import logger
+
+from myoconverter.xml.parsers import IParser
 
 
 class CoordinateLimitForce(IParser):
@@ -56,7 +56,7 @@ class CoordinateLimitForce(IParser):
       # continue
 
     # Take the average of stiffness
-    stiffness = 0.5 *(float(force["upper_stiffness"]) + float(force["lower_stiffness"]))
+    stiffness = 0.5 * (float(force["upper_stiffness"]) + float(force["lower_stiffness"]))
 
     # Stiffness / damping may be defined in two separate forces; we assume that we're dealing with damping
     # if average stiffness is close to zero
@@ -65,7 +65,7 @@ class CoordinateLimitForce(IParser):
       # Check if rotational stiffness
       damping = float(force["damping"])
       if target["motion_type"] == "rotational":
-        damping *= math.pi/180
+        damping *= math.pi / 180
 
       # Set damping
       target["damping"] = damping
@@ -76,7 +76,7 @@ class CoordinateLimitForce(IParser):
       # this is something we'll need to approximate
 
       # Limits in CoordinateLimitForce should be in degrees
-      force_coordinate_limits = np.array([float(force["lower_limit"]), float(force["upper_limit"])]) * math.pi /180
+      force_coordinate_limits = np.array([float(force["lower_limit"]), float(force["upper_limit"])]) * math.pi / 180
 
       # Check if there are hard limits defined for this joint
       if target["limited"]:

@@ -3,19 +3,18 @@
 @author: Aleksi Ikkala
 """
 
-from myoconverter.xml.utils import str2vec
-from myoconverter.xml import config as cfg
-
+import numpy as np
 from loguru import logger
 
-import numpy as np
-
+from myoconverter.xml import config as cfg
+from myoconverter.xml.utils import str2vec
 
 wrap_name_mapping = {
   "WrapEllipsoid": "ellipsoid",
   "WrapCylinder": "cylinder",
   "WrapTorus": "torus",
   "WrapSphere": "sphere"}
+
 
 def mujoco_wrap_object_name(osim_wrap_object_name):
   """ Get wrapping object name in MuJoCo
@@ -39,6 +38,7 @@ def mujoco_wrap_object_name(osim_wrap_object_name):
 
   return f"{osim_wrap_object_name}_{wrap_name_mapping[wrap_object[0].tag]}"
 
+
 def projected_point_inside_segment(a, b, p):
   """ Check if projection of point p is inside segment starting from a and ending in b.
 
@@ -50,8 +50,9 @@ def projected_point_inside_segment(a, b, p):
   :return: Boolean indicating whether projection of point p is inside given segment
   """
   delta = b - a
-  inner_product = np.dot(p-a, delta)
+  inner_product = np.dot(p - a, delta)
   return inner_product >= 0 and inner_product <= np.dot(delta, delta)
+
 
 def point_distance_from_segment(a, b, p):
   """ Calculate distance between point p and segment starting from a and ending in b.
@@ -63,7 +64,8 @@ def point_distance_from_segment(a, b, p):
   :param p: Point
   :return: DIstance between point p and segment
   """
-  return np.linalg.norm(np.cross(p-a, b-a)) / np.linalg.norm(b-a)
+  return np.linalg.norm(np.cross(p - a, b - a)) / np.linalg.norm(b - a)
+
 
 def find_wrap_path(xml, body, tendon, center):
   """ Find locations of wrapping sites within a tendon. This placement is very much based on heuristics, and probably
@@ -113,20 +115,20 @@ def find_wrap_path(xml, body, tendon, center):
     logger.warning(f"Could not find any sites for tendon {tendon.attrib['name']} that are located in body "
           f"{body.attrib['name']}. Could be because of conditional or moving path points (sites) that are defined "
           f"in other bodies. Could not add wrapping body {xml.attrib['name']}, you need to do it yourself. ")
-    return
+    return None
 
   # Check whether projected center of wrapping object falls within the segments (segments defined by consecutive sites)
   # Calculate also min distance from start/end points of segments to center, and min distance between center and line
   # defined by each segment
   inside = []
-  min_dist_from_endpoints = np.zeros((len(tendon_site_idxs)-1,2))
-  segment = np.empty((len(tendon_site_idxs)-1,2), dtype=int)
+  min_dist_from_endpoints = np.zeros((len(tendon_site_idxs) - 1, 2))
+  segment = np.empty((len(tendon_site_idxs) - 1, 2), dtype=int)
 
-  for seg_idx in range(len(tendon_site_idxs)-1):
+  for seg_idx in range(len(tendon_site_idxs) - 1):
 
     # Get start and end point of this particular path
     s1 = tendon_site_locations[seg_idx]
-    s2 = tendon_site_locations[seg_idx+1]
+    s2 = tendon_site_locations[seg_idx + 1]
 
     # Calculate whether projected center of the wrapping object is within the segment
     if projected_point_inside_segment(s1, s2, center):
@@ -136,7 +138,7 @@ def find_wrap_path(xml, body, tendon, center):
     min_dist_from_endpoints[seg_idx] = [np.linalg.norm(s1 - center), np.linalg.norm(s2 - center)]
 
     # Get site indices of start and end point
-    segment[seg_idx] = [tendon_site_idxs[seg_idx], tendon_site_idxs[seg_idx+1]]
+    segment[seg_idx] = [tendon_site_idxs[seg_idx], tendon_site_idxs[seg_idx + 1]]
 
   if len(inside) > 0:
     # Wrap each segment, into which the projected center falls, around the object
@@ -144,8 +146,8 @@ def find_wrap_path(xml, body, tendon, center):
     for seg_idx in inside:
       for idx in range(segment[seg_idx][0], segment[seg_idx][1]):
         # Make sure tendon doesn't already wrap around an object in this segment
-        if tendon_children[idx].tag == "site" or tendon_children[idx+1].tag == "site":
-          idxs.append(idx+1)
+        if tendon_children[idx].tag == "site" or tendon_children[idx + 1].tag == "site":
+          idxs.append(idx + 1)
 
   # Otherwise there's only one site defined in this body, put wrapping object after that site (or before if the site
   # is last one)
@@ -155,11 +157,11 @@ def find_wrap_path(xml, body, tendon, center):
           f"check the site definitions yourself.")
 
     # Find site closest to center
-    dist_to_center = [np.linalg.norm(site_loc-center) for site_loc in tendon_site_locations]
+    dist_to_center = [np.linalg.norm(site_loc - center) for site_loc in tendon_site_locations]
 
     # Check if this site is part of a segment (might not be if only 1 site found in this body)
     idx = tendon_site_idxs[np.argmin(dist_to_center)]
-    loc = list(zip(*np.where(segment==idx)))
+    loc = list(zip(*np.where(segment == idx)))
     if len(loc) > 1:
       logger.critical("Something's wrong, center should be close to only one site")
       raise RuntimeError
@@ -174,7 +176,7 @@ def find_wrap_path(xml, body, tendon, center):
           idx += 1
       elif loc[1] == 1:
         # Is there a subsequent site in another body?
-        if idx < len(tendon_children) - 1 and tendon_children[idx+1].tag == "site":
+        if idx < len(tendon_children) - 1 and tendon_children[idx + 1].tag == "site":
           idx = idx + 1
 
     else:
@@ -184,13 +186,13 @@ def find_wrap_path(xml, body, tendon, center):
 
       # If this site is the last one in the tendon, we have to move the wrapping site
       # Or, if the next child in tendon_children is not a site (but the current is), we have to move also
-      if idx >= len(tendon_children)-1 or (tendon_children[idx].tag == "site" and tendon_children[idx+1].tag != "site"):
+      if idx >= len(tendon_children) - 1 or (tendon_children[idx].tag == "site" and tendon_children[idx + 1].tag != "site"):
         # Let's try to put the wrapping site before the found site
         if idx > 1:
-          idx = idx-1
+          idx = idx - 1
 
     # Return as a list
-    if tendon_children[idx-1].tag == "site" and tendon_children[idx].tag == "site":
+    if tendon_children[idx - 1].tag == "site" and tendon_children[idx].tag == "site":
       idxs = [idx]
     else:
       idxs = []

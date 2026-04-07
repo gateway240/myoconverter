@@ -3,17 +3,18 @@
 @author: Aleksi Ikkala
 """
 
-from lxml import etree
-import numpy as np
+import os
+import pathlib
+
 import matplotlib
 import matplotlib.pyplot as pp
-import os
-
+import numpy as np
 from loguru import logger
+from lxml import etree
 
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import str2vec, vec2str, fit_spline
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.utils import fit_spline, str2vec, vec2str
 
 matplotlib.use("agg")
 pp.ioff()
@@ -59,8 +60,8 @@ class CoordinateCouplerConstraint(IParser):
 
       # Do some plotting; check if output folder exists
       output_dir = os.path.join(cfg.OUTPUT_PLOT_FOLDER, "coordinate_coupler_constraints")
-      if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
+      if not pathlib.Path(output_dir).is_dir():
+        pathlib.Path(output_dir).mkdir(parents=True)
 
       # Plot and save figure
       fig = self._plot_figure(x_values, y_values, fit, independent_coordinate_names, dependent_coordinate_name,
@@ -104,8 +105,8 @@ class CoordinateCouplerConstraint(IParser):
     y_approx = fit(x_approx)
 
     # Plot the OpenSim data points and approximation
-    pp.plot(x_values, y_values, '.', markersize=10, label=f"OpenSim constraint function data points")
-    pp.plot(x_approx, y_approx, label=f"Approximation of the constraint function")
+    pp.plot(x_values, y_values, ".", markersize=10, label="OpenSim constraint function data points")
+    pp.plot(x_approx, y_approx, label="Approximation of the constraint function")
     pp.legend()
     pp.xlabel(f"Independent joint value ({independent_coordinate})")
     pp.ylabel(f"Dependent joint value ({dependent_coordinate})")

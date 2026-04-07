@@ -3,14 +3,15 @@
 @author: Aleksi Ikkala
 """
 
-from lxml import etree
 import os
+
+from lxml import etree
 from scipy.spatial.transform import Rotation
 
-from myoconverter.xml.parsers import IParser
 from myoconverter.xml import config as cfg
+from myoconverter.xml.bodies.utils import copy_mesh_file, get_rgba, valid_inertia
+from myoconverter.xml.parsers import IParser
 from myoconverter.xml.utils import str2vec, vec2str
-from myoconverter.xml.bodies.utils import valid_inertia, copy_mesh_file, get_rgba
 
 
 class Body(IParser):

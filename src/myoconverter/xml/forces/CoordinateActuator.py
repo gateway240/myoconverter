@@ -3,13 +3,12 @@
 @author: Aleksi Ikkala
 """
 
+from loguru import logger
 from lxml import etree
 
-from loguru import logger
-
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import val2str, filter_nan_values, filter_keys
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.utils import filter_keys, filter_nan_values, val2str
 
 
 class CoordinateActuator(IParser):

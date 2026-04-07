@@ -6,9 +6,9 @@
 from abc import abstractmethod
 from typing import final
 
-from myoconverter.xml.parsers import IParser
 from myoconverter.xml import config as cfg
 from myoconverter.xml.joints.utils import lock_joint
+from myoconverter.xml.parsers import IParser
 
 
 class Joint(IParser):
@@ -45,7 +45,7 @@ class Joint(IParser):
 
     # Create an equality constraint if the joint (or any of the subjoints) is locked
     for p in params:
-      if "_locked" in p and p["_locked"]:
+      if p.get("_locked"):
         lock_joint(p, cfg.M_EQUALITY)
 
     # Set stiffness and damping to zero for joint between ground and root body; not sure if armature should be set to

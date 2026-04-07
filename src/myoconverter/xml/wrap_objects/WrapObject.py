@@ -3,15 +3,15 @@
 @author: Aleksi Ikkala
 """
 
-from typing import final
 from abc import abstractmethod
-from lxml import etree
-import numpy as np
+from typing import final
 
+import numpy as np
 from loguru import logger
+from lxml import etree
 
 from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import filter_keys, val2str, vec2str, create_transformation_matrix
+from myoconverter.xml.utils import create_transformation_matrix, filter_keys, val2str, vec2str
 from myoconverter.xml.wrap_objects.utils import wrap_name_mapping
 
 
@@ -92,4 +92,4 @@ class WrapObject(IParser):
       etree.SubElement(m_body, "site",
                        name=f"{xml.attrib['name']}_sidesite",
                        pos=vec2str(site_pos[:3]),
-                       size=f"{0.5*WrapObject.sidesite_dist()}")
+                       size=f"{0.5 * WrapObject.sidesite_dist()}")

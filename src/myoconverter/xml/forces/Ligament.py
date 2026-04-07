@@ -5,9 +5,9 @@
 
 from lxml import etree
 
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import str2bool, element_txt2num, val2str, filter_nan_values, filter_keys
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.utils import element_txt2num, filter_keys, filter_nan_values, str2bool, val2str
 
 
 class Ligament(IParser):
@@ -25,7 +25,7 @@ class Ligament(IParser):
       return
 
     # Collect attributes in a dict
-    params = {"name": f"{xml.attrib['name']}_ligament" }
+    params = {"name": f"{xml.attrib['name']}_ligament"}
 
     # Get resting length
     resting_length = element_txt2num(xml, "resting_length")
@@ -39,7 +39,7 @@ class Ligament(IParser):
 
     # Parse path points
     cfg.PATH_POINT_PARSER.parse_all(xml.find("GeometryPath/PathPointSet/objects"), tendon=tendon,
-                                force_name=xml.attrib['name'])
+                                force_name=xml.attrib["name"])
 
     # Parse path wrap set. Note: PathWrapSetParser parses the whole PathWrapSet at once instead of individual objects
     # found in the PathWrapSet. Input muscle name as well, since we want to create muscle-specific wrapping objects for

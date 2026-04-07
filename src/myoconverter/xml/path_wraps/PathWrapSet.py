@@ -3,13 +3,13 @@
 @author: Aleksi Ikkala
 """
 
-from lxml import etree
 from copy import deepcopy
 
 from loguru import logger
+from lxml import etree
 
-from myoconverter.xml.parsers import IParser
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
 
 
 class PathWrapSet(IParser):
@@ -52,7 +52,7 @@ class PathWrapSet(IParser):
                      f"model). ")
 
     # Transform params dict into a list
-    params_list = [(k,v) for k, v in params.items()]
+    params_list = [(k, v) for k, v in params.items()]
 
     # Add wrapping sites (in reverse order). sorted sorts according to first item in each tuple by default
     for p in sorted(params_list, reverse=True):

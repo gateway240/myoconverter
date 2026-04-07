@@ -3,14 +3,15 @@
 @author: Aleksi Ikkala
 """
 
-from lxml import etree
-from scipy.spatial.transform import Rotation
+import os
+
 import matplotlib
 import matplotlib.pyplot as pp
 import numpy as np
-import os
+from lxml import etree
+from scipy.spatial.transform import Rotation
 
-from myoconverter.xml.utils import str2vec, str2bool
+from myoconverter.xml.utils import str2bool, str2vec
 
 matplotlib.use("agg")
 pp.ioff()
@@ -41,6 +42,7 @@ def parse_coordinates(objects):
                                                      "_transform_value": float(default_value.text)})
   return coordinates
 
+
 def lock_joint(params, M_EQUALITY):
   """ Lock a joint by adding an equality constraint.
 
@@ -64,6 +66,7 @@ def lock_joint(params, M_EQUALITY):
                    polycoef=f"{params['_transform_value']} 0 0 0 0",
                    solimp="0.9999 0.9999 0.001 0.5 2")
 
+
 def estimate_axis(socket_child_frame, axis):
   """ Estimate axis of MuJoCo joint.
 
@@ -81,6 +84,7 @@ def estimate_axis(socket_child_frame, axis):
   # Return new axis
   return child_rotation.apply(axis)
 
+
 def plot_and_save_figure(x_values, y_values, fit, params, independent_coordinate, output_dir):
 
   # Initialise figure
@@ -91,8 +95,8 @@ def plot_and_save_figure(x_values, y_values, fit, params, independent_coordinate
   y_approx = fit(x_approx)
 
   # Plot original data points and approximation
-  pp.plot(x_values, y_values, '.', markersize=10, label=f"OpenSim spline data points")
-  pp.plot(x_approx, y_approx, label=f"Approximation of the spline")
+  pp.plot(x_values, y_values, ".", markersize=10, label="OpenSim spline data points")
+  pp.plot(x_approx, y_approx, label="Approximation of the spline")
   pp.legend()
   pp.xlabel(f"Independent joint value ({independent_coordinate})")
   pp.ylabel(f"Dependent joint value ({params['name']})")

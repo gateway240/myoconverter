@@ -3,18 +3,19 @@
 @author: Aleksi Ikkala
 """
 
-import numpy as np
 import os
+import pathlib
+
 import matplotlib
 import matplotlib.pyplot as pp
-
+import numpy as np
 from loguru import logger
 
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import str2vec
-from myoconverter.xml.path_points.PathPoint import PathPoint
-from myoconverter.xml.path_points.MovingPathPoint import MovingPathPoint
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.path_points.MovingPathPoint import MovingPathPoint
+from myoconverter.xml.path_points.PathPoint import PathPoint
+from myoconverter.xml.utils import str2vec
 
 matplotlib.use("agg")
 pp.ioff()
@@ -67,11 +68,11 @@ class ConditionalPathPoint(IParser):
     this_idx = parent.index(xml)
 
     # Check if previous PathPoint exists and is located in the same body
-    idx = self._find_previous(children, this_idx-1, socket_parent_frame)
+    idx = self._find_previous(children, this_idx - 1, socket_parent_frame)
 
     # If not, check if next PathPoint exists and is located in the same body
     if idx == -1:
-      idx = self._find_next(children, this_idx+1, socket_parent_frame)
+      idx = self._find_next(children, this_idx + 1, socket_parent_frame)
 
     # Check again if a suitable anchor was found (idx >= 0)
     if idx == -1:
@@ -81,84 +82,82 @@ class ConditionalPathPoint(IParser):
       self.pathpoint.parse(xml, tendon, force_name, **kwargs)
       return
 
-    else:
+    # Create an output dir for plots (if it doesn't exist)
+    output_dir = os.path.join(cfg.OUTPUT_PLOT_FOLDER, "conditional_path_points")
+    if not pathlib.Path(output_dir).is_dir():
+      pathlib.Path(output_dir).mkdir(parents=True)
 
-      # Create an output dir for plots (if it doesn't exist)
-      output_dir = os.path.join(cfg.OUTPUT_PLOT_FOLDER, "conditional_path_points")
-      if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
+    # Estimate the movement of this conditional path point in x, y, and z coordinates
+    anchor_pos = str2vec(children[idx].find("location").text)
+    cond_pos = str2vec(xml.find("location").text)
+    range = str2vec(xml.find("range").text)
 
-      # Estimate the movement of this conditional path point in x, y, and z coordinates
-      anchor_pos = str2vec(children[idx].find("location").text)
-      cond_pos = str2vec(xml.find("location").text)
-      range = str2vec(xml.find("range").text)
+    coord_names = ["x", "y", "z"]
+    dependencies = {"x": None, "y": None, "z": None}
+    for coord, name in enumerate(coord_names):
 
-      coord_names = ["x", "y", "z"]
-      dependencies = {"x": None, "y": None, "z": None}
-      for coord, name in enumerate(coord_names):
+      # Find the independent coordinate
+      independent_coordinate = xml.find("socket_coordinate").text.split("/")[-1]
 
-        # Find the independent coordinate
-        independent_coordinate = xml.find("socket_coordinate").text.split("/")[-1]
+      # Get range of independent_coordinate
+      joint = cfg.M_WORLDBODY.find(f".//joint[@name='{independent_coordinate}']")
+      independent_joint_range = str2vec(joint.attrib["range"])
 
-        # Get range of independent_coordinate
-        joint = cfg.M_WORLDBODY.find(f".//joint[@name='{independent_coordinate}']")
-        independent_joint_range = str2vec(joint.attrib["range"])
+      # Get the ideal function to represent the movement of the conditional path point in this coordinate
+      x_ideal = np.linspace(independent_joint_range[0], independent_joint_range[1], 100)
+      y_ideal = np.ones_like(x_ideal) * anchor_pos[coord]
+      y_ideal[np.argmin(np.abs(x_ideal - range[0])):np.argmin(np.abs(x_ideal - range[1])) + 1] = cond_pos[coord]
 
-        # Get the ideal function to represent the movement of the conditional path point in this coordinate
-        x_ideal = np.linspace(independent_joint_range[0], independent_joint_range[1], 100)
-        y_ideal = np.ones_like(x_ideal)*anchor_pos[coord]
-        y_ideal[np.argmin(np.abs(x_ideal-range[0])):np.argmin(np.abs(x_ideal-range[1]))+1] = cond_pos[coord]
+      # Get range of the dependent "joint" (i.e., conditional path point) movement
+      dependent_joint_range = np.array([min(y_ideal), max(y_ideal)])
 
-        # Get range of the dependent "joint" (i.e., conditional path point) movement
-        dependent_joint_range = np.array([min(y_ideal), max(y_ideal)])
+      # A super simple check whether the conditional path point should be modelled as a step function or a
+      # rectangular function
+      rectangular = np.isclose(y_ideal[0], y_ideal[-1])
 
-        # A super simple check whether the conditional path point should be modelled as a step function or a
-        # rectangular function
-        rectangular = np.isclose(y_ideal[0], y_ideal[-1])
+      if rectangular:
 
-        if rectangular:
+        # If rectangular function, approximate with a quadratic polynomial; note that this approach is agnostic to
+        # the actual location of the rectangle, we just assume it is in the middle of the independent joint range
+        x_points = np.array([independent_joint_range[0],
+                         independent_joint_range[0] + (independent_joint_range[1] - independent_joint_range[0]) / 2,
+                         independent_joint_range[1]])
+        ymax = max(y_ideal)
+        ymin = min(y_ideal)
+        y_points = np.array([y_ideal[0], ymax if not np.isclose(y_ideal[0], ymax) else ymin, y_ideal[-1]])
+        fit = np.polynomial.polynomial.Polynomial.fit(x_points, y_points, 2)
 
-          # If rectangular function, approximate with a quadratic polynomial; note that this approach is agnostic to
-          # the actual location of the rectangle, we just assume it is in the middle of the independent joint range
-          x_points = np.array([independent_joint_range[0],
-                           independent_joint_range[0] + (independent_joint_range[1] - independent_joint_range[0]) / 2,
-                           independent_joint_range[1]])
-          ymax = max(y_ideal)
-          ymin = min(y_ideal)
-          y_points = np.array([y_ideal[0], ymax if not np.isclose(y_ideal[0], ymax) else ymin, y_ideal[-1]])
-          fit = np.polynomial.polynomial.Polynomial.fit(x_points, y_points, 2)
+        # Get the polycoef representing the approximation
+        polycoef = np.zeros((5,))
+        polycoef[:fit.coef.shape[0]] = fit.convert().coef
 
-          # Get the polycoef representing the approximation
-          polycoef = np.zeros((5,))
-          polycoef[:fit.coef.shape[0]] = fit.convert().coef
+        # For plotting
+        y_approx = fit(x_ideal)
 
-          # For plotting
-          y_approx = fit(x_ideal)
+      else:
 
-        else:
+        # If step function, approximate with a linear polynomial; note that this approach is agnostic to where the
+        # actual step happens, we just linearly interpolate the movement from min to max of independent joint range
+        m = (y_ideal[-1] - y_ideal[0]) / (independent_joint_range[1] - independent_joint_range[0])
+        c = y_ideal[-1] - m * independent_joint_range[1]
 
-          # If step function, approximate with a linear polynomial; note that this approach is agnostic to where the
-          # actual step happens, we just linearly interpolate the movement from min to max of independent joint range
-          m = (y_ideal[-1] - y_ideal[0]) / (independent_joint_range[1]-independent_joint_range[0])
-          c = y_ideal[-1] - m*independent_joint_range[1]
+        # Get the polycoef representing the approximation
+        polycoef = np.array([c, m, 0, 0, 0])
 
-          # Get the polycoef representing the approximation
-          polycoef = np.array([c, m, 0, 0, 0])
+        # For plotting
+        y_approx = m * x_ideal + c
 
-          # For plotting
-          y_approx = m*x_ideal + c
+      # Plot and save a figure of the approximation
+      fig = self._plot_figure(x_ideal, y_ideal, y_approx, independent_coordinate, xml.attrib["name"], name,
+                              rectangular)
+      pp.savefig(os.path.join(output_dir, f"{xml.attrib['name']}_{name}.svg"))
+      pp.close(fig)
 
-        # Plot and save a figure of the approximation
-        fig = self._plot_figure(x_ideal, y_ideal, y_approx, independent_coordinate, xml.attrib["name"], name,
-                                rectangular)
-        pp.savefig(os.path.join(output_dir, f"{xml.attrib['name']}_{name}.svg"))
-        pp.close(fig)
+      # Save the dependency
+      dependencies[name] = (independent_coordinate, polycoef, dependent_joint_range)
 
-        # Save the dependency
-        dependencies[name] = (independent_coordinate, polycoef, dependent_joint_range)
-
-      # Treat as a MovingPathPoint
-      self.moving_pathpoint.parse(xml, tendon, force_name, dependencies=dependencies, **kwargs)
+    # Treat as a MovingPathPoint
+    self.moving_pathpoint.parse(xml, tendon, force_name, dependencies=dependencies, **kwargs)
 
   def _find_previous(self, children, idx, socket_parent_frame):
     """ Find previous PathPoint.

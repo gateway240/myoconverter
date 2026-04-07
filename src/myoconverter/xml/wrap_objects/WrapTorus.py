@@ -5,8 +5,8 @@
 
 import numpy as np
 
-from myoconverter.xml.wrap_objects.WrapObject import WrapObject
 from myoconverter.xml.utils import str2vec
+from myoconverter.xml.wrap_objects.WrapObject import WrapObject
 
 
 class WrapTorus(WrapObject):

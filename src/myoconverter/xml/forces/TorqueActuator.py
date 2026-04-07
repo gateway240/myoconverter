@@ -3,9 +3,9 @@
 @author: Aleksi Ikkala
 """
 
-from myoconverter.xml.parsers import IParser
-
 from loguru import logger
+
+from myoconverter.xml.parsers import IParser
 
 
 class TorqueActuator(IParser):

@@ -3,13 +3,21 @@
 @author: Aleksi Ikkala
 """
 import os
+import pathlib
+
 from lxml import etree
 
-from loguru import logger
-
-from myoconverter.xml.parsers import BodyParser, ConstraintParser, ForceParser, JointParser, PathPointParser, \
-  PathWrapParser, PathWrapSetParser, WrapObjectParser, MarkerParser
-
+from myoconverter.xml.parsers import (
+  BodyParser,
+  ConstraintParser,
+  ForceParser,
+  JointParser,
+  MarkerParser,
+  PathPointParser,
+  PathWrapParser,
+  PathWrapSetParser,
+  WrapObjectParser,
+)
 
 # Variables for paths, model names
 OUTPUT_FOLDER = None
@@ -90,8 +98,8 @@ def initialise(xml_file, output_folder, **kwargs):
     GEOMETRY_FOLDER = kwargs["geometry_folder"]
 
   # Create the output and geometry folders
-  os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-  os.makedirs(OUTPUT_GEOMETRY_FOLDER, exist_ok=True)
+  pathlib.Path(OUTPUT_FOLDER).mkdir(exist_ok=True, parents=True)
+  pathlib.Path(OUTPUT_GEOMETRY_FOLDER).mkdir(exist_ok=True, parents=True)
 
   # Create an XML parser
   parser = etree.XMLParser(remove_blank_text=True)

@@ -5,8 +5,8 @@
 
 import numpy as np
 
-from myoconverter.xml.utils import element_txt2num
 from myoconverter.xml.forces.Muscle import Muscle
+from myoconverter.xml.utils import element_txt2num
 
 
 class Millard2012EquilibriumMuscle(Muscle):

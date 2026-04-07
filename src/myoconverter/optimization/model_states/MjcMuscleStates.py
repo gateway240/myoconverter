@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Sun Feb 20 21:43:21 2022
 
 @author: hwang
 """
 import sys
-sys.path.append('../utils')
 
-import numpy as np
+sys.path.append("../utils")
+
 from loguru import logger
+
 from myoconverter.optimization.utils.UtilsMujoco import computeMomentArmMusclesJoints, getMuscleForceLengthCurvesSim
-        
+
 
 class MjcMuscleStates:
     """ A class to extract the muscle states (moment arms and force properites)
         of the given Mujoco model
      """
-             
-    def __init__(self, mjc_model, wrapping_coordinate, muscle_list = None):
+
+    def __init__(self, mjc_model, wrapping_coordinate, muscle_list=None):
         """
         mjc_model: loaded mujoco model
         wrapping_coordinate: the wrapping coordinates from OpenSim model is 
@@ -27,23 +27,21 @@ class MjcMuscleStates:
         muscle_list: specified muscles whose states will be extracted. if None,
                      then all muscles inside the mjc model will be calculated.
         """
-        
+
         # initilize the input osim model and muscle list as the global variables
         self.mjc_model = mjc_model
         self.wrapping_coordinate = wrapping_coordinate
         self.muscle_list = muscle_list
-        
+
         # dictionary for storing calculated moment arms and force properties
         self.moment_arms = dict()
         self.force_properties = dict()
-        
-        
+
     def reset(self):
         # reset all calculated variables
         self.moment_arms = dict()
         self.force_properties = dict()
-        
-        
+
     # get the wrapping coordinate of the given muscle list
     def getWrapingCoords(self):
         """
@@ -66,34 +64,33 @@ class MjcMuscleStates:
                       
             ...     
             
-        """ 
-
+        """
 
         # if muscle list is not provided, then explore all muscles that included
         # in the MuJoCo model.
         if not self.muscle_list:
             # update the global muscle list variable with all muscle names inside
             # the mjc model, only the type of muscle actuator
-            self.muscle_list = [list(self.mjc_model.actuator_names)[i] \
-                                for i, val in enumerate(self.mjc_model.actuator_trntype)\
+            self.muscle_list = [list(self.mjc_model.actuator_names)[i]
+                                for i, val in enumerate(self.mjc_model.actuator_trntype)
                                 if val == 3]
-            
+
         else:
             # if the muscle list is provided, check if they are included in the mjc model
             mjc_muscle_list = list(self.mjc_model.actuator_names)
-            
+
             for muscle in self.muscle_list:
                 if muscle not in mjc_muscle_list:
-                    raise('The provided muscle ' + muscle + ' is not included in the mjc model')
+                    raise ("The provided muscle " + muscle + " is not included in the mjc model")
 
         # check if the provided or extracted mjc muscle list be covered by the
         # wrapping_coordinates that extracted from the opensim model
         for muscle in self.muscle_list:
             if muscle not in self.wrapping_coordinate.keys():
-                raise('The muscle ' + muscle + ' is not included in the provided wrapping_coordinate')
-        
+                raise ("The muscle " + muscle + " is not included in the provided wrapping_coordinate")
+
         return self.wrapping_coordinate
-    
+
     # getting all coordinate ranges that wrapped by muscles
     def getCoordRanges(self):
         """
@@ -110,20 +107,20 @@ class MjcMuscleStates:
             ...
         
         """
-        
+
         logger.info("Extract joint motion range from Mjc model")
 
         self.coordinate_range = {}
-        
+
         jnt_names = self.mjc_model.joint_names
         jnt_ranges = self.mjc_model.jnt_range
-            
+
         # go through a for loop of each joint to to formulate a dictionary
-        self.coordinate_range = {jnt_names[i]:jnt_range for i, jnt_range in enumerate(jnt_ranges)}
-                    
+        self.coordinate_range = {jnt_names[i]: jnt_range for i, jnt_range in enumerate(jnt_ranges)}
+
         return self.coordinate_range
-    
-    def getMomentArms(self, wrapping_coordinate = None, coordinate_range = None, evalN = 7):
+
+    def getMomentArms(self, wrapping_coordinate=None, coordinate_range=None, evalN=7):
         """
         calcualte moment arms of a muscle at different coordinates it wrapped.
 
@@ -148,27 +145,27 @@ class MjcMuscleStates:
             DESCRIPTION: the dictionary that contains the moment arms that were
             calculated from the opensim model with the given inputs
         """
-        
+
         logger.info("Calculate moment arms from Mjc model")
 
         if wrapping_coordinate == None:  # if not provided, generate it
             wrapping_coordinate = self.getWrapingCoords()
-        
+
         if coordinate_range == None:  # if not provided, generate it
             coordinate_range = self.getCoordRanges()
-            
+
         self.moment_arms = {}
         for muscle in wrapping_coordinate.keys():   # run through all muscles
 
             logger.info(f"Muscle: {muscle}")
-        
+
             muscle_moment_arms = []
             for joints in wrapping_coordinate[muscle]:  # run through all joints
-                
+
                 motion_range = []
                 for joint in joints:  # extract the motion range
-                
-                    # setup the maximum mesh points depends on the number of 
+
+                    # setup the maximum mesh points depends on the number of
                     # joint coupling together, otherwise it will take too long to
                     # compute them!
                     if len(joints) == 1:
@@ -181,20 +178,20 @@ class MjcMuscleStates:
                         evalN = 5
 
                     motion_range.append(coordinate_range[joint])
-                
+
                 # calculate moment arms for this muscle and joints
                 # and save it to a list
-                
-                muscle_moment_arms.append(computeMomentArmMusclesJoints(self.mjc_model,\
-                                                                 muscle, joints,\
+
+                muscle_moment_arms.append(computeMomentArmMusclesJoints(self.mjc_model,
+                                                                 muscle, joints,
                                                                  motion_range, evalN))
-                    
+
             # save the moment arms of the muscle into a dictionary
-            self.moment_arms[muscle]= muscle_moment_arms
-            
+            self.moment_arms[muscle] = muscle_moment_arms
+
         return self.moment_arms
-    
-    def getMuscleForceMaps(self, osim_force_maps, wrapping_coordinate = None, coordinate_range = None, evalN = 11):
+
+    def getMuscleForceMaps(self, osim_force_maps, wrapping_coordinate=None, coordinate_range=None, evalN=11):
         """
         get the muscle force maps from MuJoCo models. Strongly suggest to run 
         this step after optimizing the moment arms. This force length maps are 
@@ -229,24 +226,24 @@ class MjcMuscleStates:
         """
 
         logger.info("Calculate muscle force curves from Mjc model")
-    
+
         if wrapping_coordinate == None:  # if not provided, generate it
             wrapping_coordinate = self.getWrapingCoords()
-        
+
         if coordinate_range == None:  # if not provided, generate it
             coordinate_range = self.getCoordRanges()
-            
+
         self.force_maps = {}
         for muscle in osim_force_maps.keys():   # run through each muscle
 
             logger.info(f"Muscle: {muscle}")
-        
+
             # get a list of muscle lengths from minimal to maximum and the corresponding
             # joint angle list
             force_map = {}
-            
-            jit_list_set = osim_force_maps[muscle]['jit_list_set']
-            
+
+            jit_list_set = osim_force_maps[muscle]["jit_list_set"]
+
             motion_range = []
             joints_uniq = []
             for joints in wrapping_coordinate[muscle]:  # run through all joints
@@ -257,17 +254,15 @@ class MjcMuscleStates:
 
             # set the muscle activation shift from 0 to 1
             act_list = [1]
-                
+
             # get muscle tendon force,  and active/passive forces
             mtu_force_length, mtu_len_set = \
-                getMuscleForceLengthCurvesSim(self.mjc_model, muscle, joints_uniq, 
+                getMuscleForceLengthCurvesSim(self.mjc_model, muscle, joints_uniq,
                                    jit_list_set, act_list)
-                
 
-            force_map['mtu_len_set'] = mtu_len_set
-            force_map['mtu_force_length'] = mtu_force_length
-            
+            force_map["mtu_len_set"] = mtu_len_set
+            force_map["mtu_force_length"] = mtu_force_length
+
             self.force_maps[muscle] = force_map
-        
+
         return self.force_maps
-    

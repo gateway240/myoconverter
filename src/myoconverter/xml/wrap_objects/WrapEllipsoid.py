@@ -3,10 +3,10 @@
 @author: Aleksi Ikkala
 """
 
-from myoconverter.xml.wrap_objects.WrapObject import WrapObject
-from myoconverter.xml.utils import str2vec
-
 import numpy as np
+
+from myoconverter.xml.utils import str2vec
+from myoconverter.xml.wrap_objects.WrapObject import WrapObject
 
 
 class WrapEllipsoid(WrapObject):
@@ -34,12 +34,12 @@ class WrapEllipsoid(WrapObject):
 
     # Calculate sidesite positions
     self._sidesite_pos = \
-      {"+x": np.array([self.sidesite_dist()+self._params["size"], 0, 0]),
-       "x": np.array([self.sidesite_dist()+self._params["size"], 0, 0]),
-       "-x": np.array([-(self.sidesite_dist()+self._params["size"]), 0, 0]),
-       "+y": np.array([0, self.sidesite_dist()+self._params["size"], 0]),
-       "y": np.array([0, self.sidesite_dist()+self._params["size"], 0]),
-       "-y": np.array([0, -(self.sidesite_dist()+self._params["size"]), 0]),
-       "+z": np.array([0, 0, self.sidesite_dist()+self._params["size"]]),
-       "z": np.array([0, 0, self.sidesite_dist()+self._params["size"]]),
-       "-z": np.array([0, 0, -(self.sidesite_dist()+self._params["size"])])}
+      {"+x": np.array([self.sidesite_dist() + self._params["size"], 0, 0]),
+       "x": np.array([self.sidesite_dist() + self._params["size"], 0, 0]),
+       "-x": np.array([-(self.sidesite_dist() + self._params["size"]), 0, 0]),
+       "+y": np.array([0, self.sidesite_dist() + self._params["size"], 0]),
+       "y": np.array([0, self.sidesite_dist() + self._params["size"], 0]),
+       "-y": np.array([0, -(self.sidesite_dist() + self._params["size"]), 0]),
+       "+z": np.array([0, 0, self.sidesite_dist() + self._params["size"]]),
+       "z": np.array([0, 0, self.sidesite_dist() + self._params["size"]]),
+       "-z": np.array([0, 0, -(self.sidesite_dist() + self._params["size"])])}

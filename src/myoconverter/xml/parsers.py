@@ -3,14 +3,14 @@
 The individual parsers and respective packages are defined under myoconverter.xml
 """
 
-import os
 import importlib
+import os
 from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from myoconverter.xml.utils import filter_set
 from myoconverter.xml import config as cfg
+from myoconverter.xml.utils import filter_set
 
 
 class BaseParser:
@@ -41,7 +41,7 @@ class BaseParser:
     """
 
     if xml is None:
-      return
+      return None
 
     # Check if a parser has been implemented
     if xml.tag not in self.parsers:
@@ -93,6 +93,7 @@ class BaseParser:
 
     return parsers
 
+
 class BodyParser(BaseParser):
   """ This class collects all parsers relevant to parsing bodies.
 
@@ -101,6 +102,7 @@ class BodyParser(BaseParser):
   """
   def __init__(self):
     super().__init__("bodies", ignore_files={"utils.py"})
+
 
 class ConstraintParser(BaseParser):
   """ This class collects all parsers relevant to parsing constraints.
@@ -111,6 +113,7 @@ class ConstraintParser(BaseParser):
   def __init__(self):
     super().__init__("constraints", ignore_files=set())
 
+
 class JointParser(BaseParser):
   """ This class collects all parsers relevant to parsing joints.
 
@@ -120,6 +123,7 @@ class JointParser(BaseParser):
   def __init__(self):
     super().__init__("joints", ignore_files={"utils.py", "Joint.py"})
 
+
 class ForceParser(BaseParser):
   """ This class collects all parsers relevant to parsing forces.
 
@@ -128,6 +132,7 @@ class ForceParser(BaseParser):
   """
   def __init__(self):
     super().__init__("forces", ignore_files={"utils.py", "Muscle.py"})
+
 
 class PathPointParser(BaseParser):
   """ This class collects all parsers relevant to parsing path points.
@@ -139,6 +144,7 @@ class PathPointParser(BaseParser):
   def __init__(self):
     super().__init__("path_points", ignore_files={"utils.py"})
 
+
 class WrapObjectParser(BaseParser):
   """ This class collects all parsers relevant to parsing wrap objects.
 
@@ -147,6 +153,7 @@ class WrapObjectParser(BaseParser):
   """
   def __init__(self):
     super().__init__("wrap_objects", ignore_files={"utils.py", "WrapObject.py"})
+
 
 class PathWrapParser(BaseParser):
   """ This class collects all parsers relevant to parsing path wraps (except see PathWrapSetParser).
@@ -157,11 +164,13 @@ class PathWrapParser(BaseParser):
   def __init__(self):
     super().__init__("path_wraps", ignore_files={"utils.py", "PathWrapSet_OLD.py", "PathWrapSet.py"})
 
+
 class PathWrapSetParser(BaseParser):
   """ A higher hierarchy level parser for parsing PathWrapSets, where we need to keep track of multiple path wraps
   during parsing. """
   def __init__(self):
     super().__init__("path_wraps", ignore_files={"utils.py", "PathWrap.py"})
+
 
 class MarkerParser(BaseParser):
   """ This class collects all parsers relevant to parsing markers.

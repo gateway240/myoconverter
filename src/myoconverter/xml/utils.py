@@ -4,16 +4,15 @@
 """
 
 import numpy as np
-from sklearn.metrics import r2_score
-from scipy.spatial.transform import Rotation
-from scipy.interpolate import interp1d
+from loguru import logger
 from lxml import etree
 from numpy.polynomial.polynomial import Polynomial
+from scipy.interpolate import interp1d
+from scipy.spatial.transform import Rotation
+from sklearn.metrics import r2_score
 
-from loguru import logger
+split_name = lambda string: string.split("/")[1:]
 
-
-split_name = lambda string: string.split('/')[1:]
 
 def find_element_by_name(xml, names):
   """ Find a name from given XML element.
@@ -25,17 +24,20 @@ def find_element_by_name(xml, names):
   search_str = "".join([f".//*[@name='{name}']" for name in names])
   return xml.find(search_str)
 
+
 def str2vec(string):
   return np.array(string.split(), dtype=float)
 
+
 def vec2str(vec):
-  return ' '.join(['%.4g' % num for num in vec])
+  return " ".join(["%.4g" % num for num in vec])
+
 
 def num2str(x):
   if isinstance(x, (np.ndarray, list)):
     return vec2str(x)
-  else:
-    return str(x)
+  return str(x)
+
 
 def filter_keys(d, prefix="_"):
   """ Filter keys with given prefix from a dictionary
@@ -46,6 +48,7 @@ def filter_keys(d, prefix="_"):
   """
   return {k: v for k, v in d.items() if not k.startswith(prefix)}
 
+
 def filter_nan_values(d):
   """ Filter nan values from dictionary
 
@@ -54,13 +57,10 @@ def filter_nan_values(d):
   """
   filtered_d = {}
   for k, v in d.items():
-    if isinstance(v, (str, bool)):
-      filtered_d[k] = v
-    elif isinstance(v, (np.ndarray, list)) and np.all(np.isfinite(v)):
-      filtered_d[k] = v
-    elif np.all(np.isfinite(v)):
+    if isinstance(v, (str, bool)) or (isinstance(v, (np.ndarray, list)) and np.all(np.isfinite(v))) or np.all(np.isfinite(v)):
       filtered_d[k] = v
   return filtered_d
+
 
 def filter_set(s, prefix="_"):
   """ Filter elements starting with given prefix from set.
@@ -70,6 +70,7 @@ def filter_set(s, prefix="_"):
   :return: A set with elements starting with given prefix filtered
   """
   return {e for e in s if not e.startswith(prefix)}
+
 
 def val2str(d):
   """ Convert dict values (numbers/vectors/bools) to strings.
@@ -87,17 +88,18 @@ def val2str(d):
       str_d[k] = num2str(v)
   return str_d
 
+
 def str2bool(string):
   if isinstance(string, str):
     return True if string in ["true", "True"] else False
-  else:
-    raise RuntimeError("Input to this function should be a string")
+  raise RuntimeError("Input to this function should be a string")
+
 
 def bool2str(boolean):
   if isinstance(boolean, bool):
     return "true" if boolean else "false"
-  else:
-    raise RuntimeError("Input to this function should be a boolean")
+  raise RuntimeError("Input to this function should be a boolean")
+
 
 def create_symmetric_matrix(vec):
   """ Create a symmetric matrix from given upper triangle values.
@@ -112,6 +114,7 @@ def create_symmetric_matrix(vec):
   matrix[1, 2] = vec[5]
   return matrix + matrix.T - np.diag(matrix.diagonal())
 
+
 def element_txt2num(xml, element_name, default=np.nan):
   """ Convert element to a number, or return `default` if the element is missing.
 
@@ -123,6 +126,7 @@ def element_txt2num(xml, element_name, default=np.nan):
   element = xml.find(element_name)
   return float(element.text) if element is not None else default
 
+
 def fit_piecewise_linear(x_values, y_values):
   """ Fit a piecewise linear function.
 
@@ -133,6 +137,7 @@ def fit_piecewise_linear(x_values, y_values):
   :return: Piecewise linear model
   """
   return interp1d(x_values, y_values, fill_value="extrapolate")
+
 
 def fit_spline(x_values, y_values):
   """ Fit a spline, check validity, return polycoef.
@@ -171,6 +176,7 @@ def fit_spline(x_values, y_values):
 
   return fit, polycoef, range
 
+
 def create_transformation_matrix(pos=None, quat=None, rotation_matrix=None, euler=None):
   """ Create a 4x4 transformation matrix.
 
@@ -198,6 +204,7 @@ def create_transformation_matrix(pos=None, quat=None, rotation_matrix=None, eule
 
   return T
 
+
 def calculate_mujoco_position(tag, name, M_WORLDBODY):
   """ Calculate position of an element in MuJoCo model
 
@@ -224,6 +231,7 @@ def calculate_mujoco_position(tag, name, M_WORLDBODY):
   T = np.linalg.inv(T)
   return T[:3, 3]
 
+
 def is_linear(polycoef):
   """ Check if polycoef represents a linear function.
 
@@ -233,8 +241,8 @@ def is_linear(polycoef):
   idxs = np.array([0, 2, 3, 4])
   if np.allclose(polycoef[idxs], 0):
     return True
-  else:
-    return False
+  return False
+
 
 def get_body(OPENSIM, M_WORLDBODY, parent_socket_frame):
   """ Get MuJoCo `body` corresponding to and OpenSim `Body`.
@@ -269,6 +277,7 @@ def get_body(OPENSIM, M_WORLDBODY, parent_socket_frame):
   # Return body
   return mujoco_body
 
+
 def create_keyframe(MUJOCO, M_WORLDBODY, M_EQUALITY):
   """ Create a keyframe for the MuJoCo model.
 
@@ -301,6 +310,7 @@ def create_keyframe(MUJOCO, M_WORLDBODY, M_EQUALITY):
 
   # Set qpos
   key.attrib["qpos"] = vec2str([default_values[joint_name] for joint_name in joint_names])
+
 
 def _set_default_value(M_EQUALITY, joints, default_values, joint_names, index):
   """ Set default value for a joint.

@@ -5,9 +5,9 @@
 
 from lxml import etree
 
-from myoconverter.xml.parsers import IParser
-from myoconverter.xml.utils import get_body, vec2str, str2vec
 from myoconverter.xml import config as cfg
+from myoconverter.xml.parsers import IParser
+from myoconverter.xml.utils import get_body, str2vec, vec2str
 
 
 class Marker(IParser):

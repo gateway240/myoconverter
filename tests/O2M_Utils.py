@@ -1,14 +1,15 @@
-import numpy as np
-from pyquaternion import Quaternion
 import math
-import pandas as pd
-import matplotlib
-import matplotlib.pyplot as pp
-import skvideo.io
-import subprocess
 import os
+import pathlib
 import pickle
 from copy import deepcopy
+
+import matplotlib
+import matplotlib.pyplot as pp
+import numpy as np
+import pandas as pd
+import skvideo.io
+from pyquaternion import Quaternion
 
 
 def is_nested_field(d, field, nested_fields):
@@ -16,13 +17,10 @@ def is_nested_field(d, field, nested_fields):
     if len(nested_fields) > 0:
         if nested_fields[0] in d:
             return is_nested_field(d[nested_fields[0]], field, nested_fields[1:])
-        else:
-            return False
-    else:
-        if field in d:
-            return True
-        else:
-            return False
+        return False
+    if field in d:
+        return True
+    return False
 
 
 def create_rotation_matrix(axis, rad=None, deg=None):
@@ -42,15 +40,15 @@ def create_rotation_matrix(axis, rad=None, deg=None):
         rad = (math.pi / 180) * deg
 
     # Create the rotation matrix
-    R[0, 0] = l*l*(1-np.cos(rad)) + np.cos(rad)
-    R[0, 1] = m*l*(1-np.cos(rad)) - n*np.sin(rad)
-    R[0, 2] = n*l*(1-np.cos(rad)) + m*np.sin(rad)
-    R[1, 0] = l*m*(1-np.cos(rad)) + n*np.sin(rad)
-    R[1, 1] = m*m*(1-np.cos(rad)) + np.cos(rad)
-    R[1, 2] = n*m*(1-np.cos(rad)) - l*np.sin(rad)
-    R[2, 0] = l*n*(1-np.cos(rad)) - m*np.sin(rad)
-    R[2, 1] = m*n*(1-np.cos(rad)) + l*np.sin(rad)
-    R[2, 2] = n*n*(1-np.cos(rad)) + np.cos(rad)
+    R[0, 0] = l * l * (1 - np.cos(rad)) + np.cos(rad)
+    R[0, 1] = m * l * (1 - np.cos(rad)) - n * np.sin(rad)
+    R[0, 2] = n * l * (1 - np.cos(rad)) + m * np.sin(rad)
+    R[1, 0] = l * m * (1 - np.cos(rad)) + n * np.sin(rad)
+    R[1, 1] = m * m * (1 - np.cos(rad)) + np.cos(rad)
+    R[1, 2] = n * m * (1 - np.cos(rad)) - l * np.sin(rad)
+    R[2, 0] = l * n * (1 - np.cos(rad)) - m * np.sin(rad)
+    R[2, 1] = m * n * (1 - np.cos(rad)) + l * np.sin(rad)
+    R[2, 2] = n * n * (1 - np.cos(rad)) + np.cos(rad)
 
     return R
 
@@ -85,7 +83,7 @@ def create_symmetric_matrix(vec):
 
 
 def array_to_string(array):
-    return ' '.join(['%1g' % num for num in array])
+    return " ".join(["%1g" % num for num in array])
 
 
 def create_transformation_matrix(pos=None, quat=None, R=None):
@@ -111,7 +109,7 @@ def get_control(model, control_file):
     column_names = list(control_values)
     for muscle_name in model._actuator_name2id:
         if muscle_name not in column_names:
-            print("Activations for muscle {} were not found from control file {}".format(muscle_name, control_file))
+            print(f"Activations for muscle {muscle_name} were not found from control file {control_file}")
             return None
 
     return control_values, control_header
@@ -119,7 +117,7 @@ def get_control(model, control_file):
 
 def parse_sto_file(sto_file):
 
-    with open(sto_file) as file:
+    with pathlib.Path(sto_file).open() as file:
 
         # Go through header and parse it
         header_found = False
@@ -186,10 +184,10 @@ def estimate_error(reference, simulated, target_names=None, timesteps=None, plot
     if plot:
         fig, axes = pp.subplots(reference.shape[1], 1, figsize=(10, 18))
         if timesteps is None:
-            axes[-1].set_xlabel('Time (indices)')
+            axes[-1].set_xlabel("Time (indices)")
             timesteps = np.arange(0, reference.shape[0])
         else:
-            axes[-1].set_xlabel('Time (seconds)')
+            axes[-1].set_xlabel("Time (seconds)")
 
     # Get error between reference joint/muscle and simulated joint/muscle
     for idx in range(reference.shape[1]):
@@ -205,7 +203,7 @@ def estimate_error(reference, simulated, target_names=None, timesteps=None, plot
 
         if plot:
             axes[idx].plot(timesteps, e)
-            axes[idx].plot(np.array([timesteps[0], timesteps[-1]]), np.array([0, 0]), 'k--')
+            axes[idx].plot(np.array([timesteps[0], timesteps[-1]]), np.array([0, 0]), "k--")
             if target_names is not None:
                 axes[idx].set_ylabel(target_names[idx])
 
@@ -229,7 +227,7 @@ def check_muscle_order(model, data):
 def get_target_state_indices(model, env):
 
     # Map mujoco joints to target joints
-    target_state_indices = np.empty(len(env.target_states,), dtype=int)
+    target_state_indices = np.empty(len(env.target_states), dtype=int)
     for idx, target_state in enumerate(env.target_states):
         target_state_indices[idx] = model.joint_names.index(target_state)
 
@@ -242,9 +240,9 @@ def get_initial_states(model, env):
     initial_states = None
 
     if env.initial_states is not None:
-        qpos = np.zeros(len(model.joint_names),)
-        qvel = np.zeros(len(model.joint_names),)
-        ctrl = np.zeros(len(model.actuator_names),)
+        qpos = np.zeros(len(model.joint_names))
+        qvel = np.zeros(len(model.joint_names))
+        ctrl = np.zeros(len(model.actuator_names))
 
         # Get qpos and qvel for joints
         if "joints" in env.initial_states:
@@ -293,6 +291,7 @@ def initialise_simulation(sim, initial_states=None, timestep=None):
         # We might need to call forward to make sure everything is set properly after setting
         # qpos (not sure if required)
         sim.forward()
+
 
 def initialise_full_qpos(sim):
 
@@ -345,7 +344,7 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
     if viewer is not None and output_video_file is not None:
 
         # Make sure output folder exists
-        os.makedirs(os.path.dirname(output_video_file), exist_ok=True)
+        pathlib.Path(os.path.dirname(output_video_file)).mkdir(exist_ok=True, parents=True)
 
         # Set params
         width = 1200
@@ -354,9 +353,9 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
 
         # Get writer
         writer = skvideo.io.FFmpegWriter(output_video_file,
-                                         inputdict={"-s": "{}x{}".format(width, height),
+                                         inputdict={"-s": f"{width}x{height}",
                                                     "-r": str(fs)}, outputdict={"-pix_fmt": "yuv420p"})
-                                                    #"-r": str(0.1/sim.model.opt.timestep)})
+                                                    # "-r": str(0.1/sim.model.opt.timestep)})
 
         # Get indices of frames to be recorded
         frame_idxs = np.arange(0, len(controls), (1 / fs) / sim.model.opt.timestep).astype(int)
@@ -372,8 +371,8 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
             try:
                 sim.step()
             except:
-                print('Exception during Forward Simulation')
-                continue#import ipdb; ipdb.set_trace()
+                print("Exception during Forward Simulation")
+                continue  # import ipdb; ipdb.set_trace()
         # Get joint positions, joint velocities, and actuator forces
         qpos[t, :] = sim.data.qpos.ravel().copy()
         qvel[t, :] = sim.data.qvel.ravel().copy()
@@ -384,7 +383,7 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
                 viewer.render()
             elif t in frame_idxs:
                 viewer.render(width, height, sim.model._camera_name2id["for_testing"])
-                #imgs.append(np.flip(sim.render(width, height, camera_name="for_testing"), axis=0))
+                # imgs.append(np.flip(sim.render(width, height, camera_name="for_testing"), axis=0))
                 # img = np.flipud(viewer.read_pixels(width, height, depth=False))
                 img = np.asarray(viewer.read_pixels(width, height, depth=False)[::-1, :, :], dtype=np.uint8)
                 # import ipdb; ipdb.set_trace()
@@ -392,27 +391,26 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_ski
                     writer.writeFrame(img)
                 except:
                     head_tail = os.path.split(output_video_file)
-                    os.makedirs(head_tail[0]+"/"+head_tail[1].split('.mp4')[0], exist_ok=True)
+                    pathlib.Path(head_tail[0] + "/" + head_tail[1].split(".mp4")[0]).mkdir(exist_ok=True, parents=True)
                     # skvideo.io.vwrite(head_tail[0]+"/tempStore/"+head_tail[1].split('.mp4')[0]+str(t)+".png", img)
-                    matplotlib.image.imsave(head_tail[0]+"/"+head_tail[1].split('.mp4')[0]+"/"+head_tail[1].split('.mp4')[0]+str(t).zfill(4)+".png", img)
+                    matplotlib.image.imsave(head_tail[0] + "/" + head_tail[1].split(".mp4")[0] + "/" + head_tail[1].split(".mp4")[0] + str(t).zfill(4) + ".png", img)
                     was_exception = True
-
 
     if viewer is not None and output_video_file is not None:
         # import ipdb; ipdb.set_trace()
         # Close writer
         writer.close()
         if was_exception:
-            print("Couldnt write the video but single images are in "+head_tail[0]+"/tempStore/")
+            print("Couldnt write the video but single images are in " + head_tail[0] + "/tempStore/")
             # Create the video
 
             cmd = ["ffmpeg",
                                 "-r", str(fs),
-                                "-i", os.path.join(head_tail[0]+"/"+head_tail[1].split('.mp4')[0]+"/"+head_tail[1].split('.mp4')[0]+"%04d.png"),
-                               "-s", "{}x{}".format(width, height),
+                                "-i", os.path.join(head_tail[0] + "/" + head_tail[1].split(".mp4")[0] + "/" + head_tail[1].split(".mp4")[0] + "%04d.png"),
+                               "-s", f"{width}x{height}",
                                 "-pix_fmt", "yuv420p",
                                 output_video_file]
-            print('run:'+ ' '.join(cmd))
+            print("run:" + " ".join(cmd))
             # subprocess.call(cmd)
 
     return {"qpos": qpos, "qvel": qvel}
@@ -427,24 +425,24 @@ def set_parameters(model, parameters, muscle_idxs, joint_idxs):
     # Set muscle scales, and tendon stiffness and damping
     for muscle_idx in muscle_idxs:
         model.actuator_gainprm[muscle_idx][3] = parameters[muscle_idx]
-        model.tendon_stiffness[muscle_idx] = parameters[nmuscles+muscle_idx]
-        model.tendon_damping[muscle_idx] = parameters[2*nmuscles+muscle_idx]
+        model.tendon_stiffness[muscle_idx] = parameters[nmuscles + muscle_idx]
+        model.tendon_damping[muscle_idx] = parameters[2 * nmuscles + muscle_idx]
 
     # Set joint stiffness and damping
     for idx, joint_idx in enumerate(joint_idxs):
-        #model.jnt_stiffness[joint_idx] = parameters[3 * nmuscles + idx]
+        # model.jnt_stiffness[joint_idx] = parameters[3 * nmuscles + idx]
         model.dof_damping[joint_idx] = parameters[3 * nmuscles + 0 * njoints + idx]
         model.jnt_solimp[joint_idx, 2] = parameters[3 * nmuscles + 1 * njoints + idx]
 
 
 def load_data(data_file):
-    with open(data_file, 'rb') as f:
+    with pathlib.Path(data_file).open("rb") as f:
         params, data, train_idxs, test_idxs = pickle.load(f)
     return {"params": params, "data": data, "train_idxs": train_idxs, "test_idxs": test_idxs}
 
 
 def save_data(data_file, data):
-    with open(data_file, 'wb') as f:
+    with pathlib.Path(data_file).open("wb") as f:
         pickle.dump(data, f)
 
 
@@ -452,7 +450,8 @@ def find_outliers(data, k=1.5):
     # Data is assumed to be a 1D vector. Do a simple IQR based outlier detection
     quartiles = np.percentile(data, [25, 75])
     iqr = quartiles[1] - quartiles[0]
-    return (data > quartiles[1] + k*iqr) | (data < quartiles[0] - k*iqr)
+    return (data > quartiles[1] + k * iqr) | (data < quartiles[0] - k * iqr)
+
 
 def get_target_states(model, unordered_states, target_states, target_state_indices, num_states, in_degrees=False):
     x = np.zeros((num_states,))
@@ -463,6 +462,7 @@ def get_target_states(model, unordered_states, target_states, target_state_indic
             value *= np.pi / 180
         x[target_state_indices[idx]] = value
     return x
+
 
 def get_xpos(sim, targets, type="dict"):
 
@@ -476,6 +476,7 @@ def get_xpos(sim, targets, type="dict"):
       xpos[target] = deepcopy(sim.data.geom_xpos[sim.model._geom_name2id[target]])
 
   return xpos
+
 
 class Parameters:
 

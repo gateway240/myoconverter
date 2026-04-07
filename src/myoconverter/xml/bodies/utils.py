@@ -3,12 +3,12 @@
 @author: Aleksi Ikkala
 """
 
-import numpy as np
 import os
-import trimesh
-import pyvista
 from shutil import copyfile
 
+import numpy as np
+import pyvista
+import trimesh
 from loguru import logger
 
 from myoconverter.xml.utils import create_symmetric_matrix
@@ -24,8 +24,8 @@ def valid_inertia(mass, inertia_vec):
   values, vectors = np.linalg.eig(create_symmetric_matrix(inertia_vec))
   if mass > 0 and np.all(values > 0):
     return True
-  else:
-    return False
+  return False
+
 
 def copy_mesh_file(mesh_file, geometry_folder, output_geometry_folder):
   """ This function copies the original mesh file,converts it to stl and fixes unconnected facets (if necessary)
@@ -69,6 +69,7 @@ def copy_mesh_file(mesh_file, geometry_folder, output_geometry_folder):
 
   return mesh_name, stl_filename
 
+
 def get_rgba(mesh):
   """ Return rgba string for given mesh
 
@@ -81,7 +82,7 @@ def get_rgba(mesh):
 
   # Check if mesh is visible, or transparent
   if visible is not None:
-    if visible.text=="false":
+    if visible.text == "false":
       alpha = "0"
     else:
       alpha = "1"

@@ -7,46 +7,46 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
-#sys.path.insert(0, os.path.abspath("../../myoconverter"))
+# sys.path.insert(0, os.path.abspath("../../myoconverter"))
 
 
 # -- Project information
 
-project = 'MyoConverter'
+project = "MyoConverter"
 copyright = "Aleksi Ikkala, Huawei Wang"
 author = "Aleksi Ikkala, Huawei Wang"
 
-release = '1.0'
-version = '1.0.0'
+release = "1.0"
+version = "1.0.0"
 
 # -- General configuration
 
 extensions = [
-    'sphinx.ext.duration',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.viewcode',
-    'autoapi.extension',
+    "sphinx.ext.duration",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
+    "autoapi.extension",
 ]
-autoapi_type = 'python'
+autoapi_type = "python"
 autoapi_dirs = ["../../myoconverter"]
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
+    "python": ("https://docs.python.org/3/", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
-intersphinx_disabled_domains = ['std']
+intersphinx_disabled_domains = ["std"]
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # -- Options for HTML output
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 # html_static_path = ['_static']
 html_logo = "images/myconverter_logo.png"
 html_theme_options = {
-    'logo_only': True,
-    'display_version': False,
+    "logo_only": True,
+    "display_version": False,
 }
 # -- Options for EPUB output
-epub_show_urls = 'footnote'
+epub_show_urls = "footnote"

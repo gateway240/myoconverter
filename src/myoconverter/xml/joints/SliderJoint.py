@@ -3,14 +3,13 @@
 @author: Aleksi Ikkala
 """
 
-from lxml import etree
 import numpy as np
-
 from loguru import logger
+from lxml import etree
 
 from myoconverter.xml.joints.Joint import Joint
-from myoconverter.xml.joints.utils import parse_coordinates, estimate_axis
-from myoconverter.xml.utils import val2str, filter_keys
+from myoconverter.xml.joints.utils import estimate_axis, parse_coordinates
+from myoconverter.xml.utils import filter_keys, val2str
 
 
 class SliderJoint(Joint):
