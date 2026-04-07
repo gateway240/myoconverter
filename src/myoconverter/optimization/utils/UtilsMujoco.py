@@ -191,7 +191,9 @@ def lockedJointAng(mjc_model):
     """
 
     # find locked constraints that satisfy all three conditions
-    lockedCons = np.logical_and(np.logical_and(mjc_model.eq_type == 2, _get_eq_active_mask(mjc_model)), mjc_model.eq_obj2id == -1)
+    lockedCons = np.logical_and(
+        np.logical_and(mjc_model.eq_type == 2, _get_eq_active_mask(mjc_model)), mjc_model.eq_obj2id == -1
+    )
 
     lockedJnts = []
     lockedJntAngs = []

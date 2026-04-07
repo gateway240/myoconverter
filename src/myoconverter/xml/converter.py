@@ -17,7 +17,6 @@ Example:
 
 """
 
-
 import argparse
 
 from loguru import logger
